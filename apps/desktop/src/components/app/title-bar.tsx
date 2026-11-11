@@ -11,7 +11,7 @@ import { cn } from "@/lib/cn";
  * Right side: the window buttons — thin 1.2-stroke icons in #9A9A9A that turn white
  * on hover; close uses the design's danger colors. (The clock lives in the sidebar.)
  * The empty area drags the window; double-click it to maximize.
- * In the browser (pnpm dev:web) it's empty — there's no window to control.
+ * In the browser (pnpm dev:desktop:browser) it's empty — there's no window to control.
  */
 export function TitleBar() {
   const [maximized, setMaximized] = useState(false);

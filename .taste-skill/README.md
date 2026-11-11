@@ -9,7 +9,7 @@ Working folder for the `design-taste-frontend` skill. Every planner view is an *
 - If a dealt style is ever needed for a new screen: `draw.mjs --app --theme dark --keep palette,type`.
 
 ## Running an audit
-From the repo root, with the dev server on `http://localhost:1420` (`pnpm dev:web` or `pnpm tauri dev`):
+From the repo root, with the dev server on `http://localhost:1420` (`pnpm dev:desktop:browser` or `pnpm dev`):
 
 ```bash
 S=~/.claude/skills/design-taste-frontend/scripts

@@ -2,9 +2,11 @@
   "name": "neos-own-planner",
   "private": true,
   "scripts": {
-    "dev": "pnpm --filter desktop tauri dev",
-    "dev:web": "pnpm --filter desktop dev",
-    "build": "pnpm --filter desktop build",
-    "typecheck": "pnpm -r exec tsc --noEmit"
+    "dev": "pnpm dev:desktop",
+    "dev:desktop": "pnpm --filter desktop tauri dev",
+    "dev:desktop:browser": "pnpm --filter desktop dev",
+    "build:desktop": "pnpm --filter desktop tauri build",
+    "check": "pnpm -r --filter \"!neos-own-planner\" --if-present build && pnpm typecheck",
+    "typecheck": "pnpm -r --filter \"!neos-own-planner\" --if-present typecheck"
   }
 }
