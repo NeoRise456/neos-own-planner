@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Todo — Shower</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.btn{all:unset;box-sizing:border-box;height:36px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap}
+.btn:focus-visible,.ib:focus-visible,.tl:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.bp{background:#FFFFFF;color:#000000;font-weight:500}.bp:hover{background:#DCDCDC}
+.bq{background:#1A1A1A;color:#F5F5F5}.bq:hover{background:#262626}
+.bg{color:#A3A3A3;font-weight:500}.bg:hover{color:#FFFFFF;background:#141414}
+.ib{all:unset;cursor:pointer;width:32px;height:32px;border-radius:50%;border:1px solid #2A2A2A;display:inline-flex;align-items:center;justify-content:center;color:#F5F5F5;flex-shrink:0}
+.ib:hover{background:#1A1A1A}
+.row{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 12px;margin:0 -12px;border-radius:8px;border:1px solid transparent}
+.row:hover{background:#0F0F0F}
+.ck{width:20px;height:20px;border-radius:50%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.tl{flex:1 1 auto;min-width:0;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;text-decoration:none;color:#FFFFFF}
+.meta{font-size:11px;text-transform:uppercase;white-space:nowrap;color:#BDBDBD}
+.stp{display:grid;grid-template-columns:30px 1fr;gap:10px;padding:9px 0;border-bottom:1px solid #141414}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 960px; box-sizing: border-box; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <div style="flex: 1 1 220px; max-width: 220px">
+    <dc-import name="Sidebar" active="todo" ui-font="{{uiFontName}}" hint-size="220px,820px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 760px; min-width: 0; display: flex; flex-wrap: wrap">
+    <main style="flex: 999 1 420px; min-width: 0; box-sizing: border-box; padding: 44px 40px 80px">
+      <div style="max-width: 540px; margin: 0 auto; display: flex; flex-direction: column">
+        <span class="lab">Today</span>
+        <h1 class="r" style="margin: 8px 0 0; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF">Monday 9 November</h1>
+        <span style="margin-top: 14px; font-size: 12px; color: #9A9A9A">Scheduled 3h · During the day 20m · +4 untimed</span>
+
+        <sc-for list="{{sections}}" as="sec" hint-placeholder-count="2">
+          <section style="display: flex; flex-direction: column; margin-top: 30px">
+            <div style="padding-bottom: 6px; border-bottom: 1px solid #141414; margin-bottom: 4px"><span class="lab">{{sec.name}}</span></div>
+            <sc-for list="{{sec.rows}}" as="t" hint-placeholder-count="3">
+              <div class="row" style="{{t.rowSt}}">
+                <span class="ck" aria-hidden="true" style="{{t.ckSt}}"><sc-if value="{{t.done}}" hint-placeholder-val="{{false}}"><svg width="10" height="10" viewBox="0 0 10 10"><path d="M2 5.2 4.2 7.4 8.2 2.8" stroke="#000000" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg></sc-if></span>
+                <span class="dm" aria-hidden="true" style="width: 28px; font-size: 18px; line-height: 18px; color: {{t.tone}}">{{t.g}}</span>
+                <span class="tl" style="color: {{t.fg}}">{{t.title}}</span>
+                <span class="meta">{{t.meta}}</span>
+              </div>
+            </sc-for>
+          </section>
+        </sc-for>
+      </div>
+    </main>
+
+    <aside aria-label="Task" style="flex: 1 1 400px; min-width: 0; max-width: 100%; box-sizing: border-box; padding: 40px 36px 80px; background: #050505; border-left: 1px solid #1A1A1A; display: flex; flex-direction: column; gap: 26px">
+
+      <div style="display: flex; align-items: flex-start; gap: 16px">
+        <div aria-hidden="true" style="width: 64px; height: 64px; border-radius: 12px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background-color .35s; {{tileSt}}"><span class="dm" style="font-size: 30px; color: {{tileGlyph}}">Sh</span></div>
+        <div style="flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; padding-top: 4px">
+          <h2 class="r" style="margin: 0; font-size: 28px; line-height: 30px; font-weight: 800; letter-spacing: -0.01em; color: #FFFFFF">Shower</h2>
+          <span style="font-size: 11px; text-transform: uppercase; color: #9A9A9A">{{metaLine}}</span>
+        </div>
+        <a href="Todo.dc.html" class="ib" aria-label="Close" style="text-decoration: none"><svg width="11" height="11" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" stroke-width="1.4"></path></svg></a>
+      </div>
+
+      <a href="Routines.dc.html" style="display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 10px; border: 1px solid #1F1F1F; text-decoration: none">
+        <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 6px; background: #E6CF8F; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><span class="dm" style="font-size: 13px; color: #111111">Mo</span></span>
+        <span style="display: flex; flex-direction: column; gap: 2px; flex: 1; min-width: 0">
+          <span style="font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #9A9A9A">Morning routine</span>
+          <span class="r" style="font-size: 15px; font-weight: 600; color: #FFFFFF">Start the day ready</span>
+        </span>
+        <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" stroke="#6B6B6B" stroke-width="1.4" fill="none"></path></svg>
+      </a>
+
+      <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 8px">
+        <sc-if value="{{notDone}}" hint-placeholder-val="{{true}}">
+          <button class="btn bp" onClick="{{toggle}}"><svg width="12" height="12" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.2 7.4 8.2 2.8" stroke="currentColor" stroke-width="1.6" fill="none" stroke-linecap="round"></path></svg>Done</button>
+        </sc-if>
+        <sc-if value="{{isDone}}" hint-placeholder-val="{{false}}">
+          <button class="btn bq" onClick="{{toggle}}">Undo</button>
+        </sc-if>
+        <button class="btn bq">Move</button>
+        <button class="btn bq">Edit</button>
+        <button class="btn bg">Cancel</button>
+      </div>
+
+      <section style="display: flex; flex-direction: column">
+        <div style="display: flex; justify-content: space-between; align-items: baseline; padding-bottom: 8px; border-bottom: 1px solid #1A1A1A">
+          <span class="lab">Protocol — Shower</span>
+          <a href="Protocols.dc.html" style="font-size: 11px; color: #9A9A9A; text-decoration: none">16 steps · edit</a>
+        </div>
+        <ol style="list-style: none; margin: 0; padding: 0">
+          <sc-for list="{{steps}}" as="s" hint-placeholder-count="16">
+            <li class="stp"><span style="font-size: 11px; color: #6B6B6B; padding-top: 2px">{{s.n}}</span><span class="r" style="font-size: 14px; line-height: 20px; color: #F5F5F5">{{s.t}}</span></li>
+          </sc-for>
+        </ol>
+      </section>
+    </aside>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":960}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var STEPS = ['Get the drier and clothes, go to the bathroom', 'Turn on the warm water, wait 2 min', 'Open the shower, make sure the temperature is right', 'Pick a playlist (≈ 4 songs) or a video if washing hair', 'Wet hair', 'Shampoo if needed', 'Rinse head again', 'Soap body, rinse body', 'Wash genitals, butt, ears and neck', 'Face cleanser for 2 min', 'Rinse full body again', 'Close the shower, apply leave-in conditioner', 'Dry body with the towel, then dry ears', 'Put on headphones, pick a 10 min video, dry hair', 'Get dressed', 'Dirty clothes in the bin, drier back in its place'];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { done: false }; }
+  renderVals() {
+    var self = this, d = this.state.done;
+    function r(title, g, tone, meta, sel) {
+      var isDone = sel && d;
+      return {
+        title: title, g: g, tone: tone, meta: isDone ? 'done 10:24' : meta, done: isDone,
+        fg: isDone ? '#9A9A9A' : '#FFFFFF',
+        rowSt: sel ? 'background:#111111;border-color:#2A2A2A' : '',
+        ckSt: isDone ? 'background:' + tone : 'border:1.5px solid #6B6B6B'
+      };
+    }
+    return {
+      uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'],
+      uiFontName: this.props.uiFont || 'Pixelify Sans',
+      sections: [
+        { name: 'Scheduled', rows: [r('Calculus (Mon)', 'Ca', '#B5B5B5', '09:00–11:00'), r('Gym', 'Gy', '#A8CC8C', '18:00–19:00')] },
+        { name: 'During the day', rows: [r('Vitamins', 'Vi', '#E6CF8F', 'by 12:00'), r('Water', 'Wa', '#E59AC2', '2/4'), r('Shower', 'Sh', '#E6CF8F', '20m', true), r('Call mom', 'Ca', '#E59AC2', 'by Sun')] }
+      ],
+      tileSt: d ? 'background:#E6CF8F' : 'border:1px solid #2A2A2A',
+      tileGlyph: d ? '#111111' : '#E6CF8F',
+      metaLine: d ? 'Mon 9 Nov · done 10:24 · 20m' : 'Mon 9 Nov · during the day · 20m',
+      notDone: !d, isDone: d,
+      toggle: function () { self.setState({ done: !d }); },
+      steps: STEPS.map(function (t, i) { return { n: (i < 9 ? '0' : '') + (i + 1), t: t }; })
+    };
+  }
+}
+</script>
+</body>
+</html>

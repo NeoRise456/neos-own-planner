@@ -1,0 +1,354 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Components</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.btn{all:unset;box-sizing:border-box;font-family:inherit;height:32px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;transition:background-color .12s,color .12s}
+.btn:focus-visible,.ib:focus-visible,.sg:focus-visible,.tab:focus-visible,.tg:focus-visible,.rc:focus-visible,.rr:focus-visible,.dots:focus-visible,.arr:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.bp{background:#FFFFFF;color:#000000}.bp:hover{background:#DCDCDC}
+.bq{background:#1A1A1A;color:#F5F5F5}.bq:hover{background:#262626}
+.bg{color:#A3A3A3;font-weight:500}.bg:hover{color:#FFFFFF;background:#141414}
+.bd{background:#3A1111;color:#FF4D4D}.bd:hover{background:#4A1515}
+.bx{background:#3A3A3A;color:#7A7A7A;cursor:not-allowed}
+.bs{height:28px;padding:0 12px;font-size:12px;background:#1A1A1A;color:#F5F5F5}.bs:hover{background:#262626}
+.bl{height:40px;padding:0 28px;font-size:14px;border-radius:8px;font-weight:500}
+.ib{all:unset;box-sizing:border-box;width:32px;height:32px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#E5E5E5}
+.ib:hover{background:#141414}
+.ib.f{background:#1A1A1A}.ib.f:hover{background:#262626}
+.ib.m{color:#7A7A7A}
+.segw{display:inline-flex;padding:2px;background:#111111;border:1px solid #262626;border-radius:8px;gap:2px}
+.sg{all:unset;box-sizing:border-box;height:26px;padding:0 18px;border-radius:6px;font-size:12px;color:#8C8C8C;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid transparent}
+.sg:hover{color:#E5E5E5}
+.sg.on{background:#000000;color:#FFFFFF;border-color:#333333;font-weight:600}
+.sg.off{color:#555555}
+.segw.big{background:#000000;padding:3px;border-radius:10px}
+.segw.big .sg{height:30px;min-width:98px;font-size:13px}
+.segw.big .sg.on{background:#FFFFFF;color:#000000;border-color:#FFFFFF}
+.tab{all:unset;cursor:pointer;font-size:13px;color:#8C8C8C;padding:2px 0 6px;border-bottom:2px solid transparent}
+.tab:hover{color:#E5E5E5}
+.tab.on{color:#FFFFFF;font-weight:600;border-bottom-color:#FFFFFF}
+.fl{font-size:12px;color:#BDBDBD}
+.in{all:unset;box-sizing:border-box;width:100%;height:36px;padding:0 10px;border:1px solid #2A2A2A;border-radius:6px;background:#000000;font-size:13px;color:#F5F5F5}
+.in:focus{border-color:#8C8C8C}
+.in::placeholder{color:#6B6B6B}
+.in.tt{height:38px;font-family:'Figtree',sans-serif;font-size:18px;font-weight:500}
+.in.cd{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:700;font-size:15px;letter-spacing:.06em}
+.in.er{border-color:#5A1C1C}
+.help{font-size:11px;color:#9A9A9A}
+.err{font-size:11px;color:#FF3B3B}
+.tg{all:unset;cursor:pointer;width:32px;height:20px;border-radius:10px;background:#1A1A1A;position:relative;flex-shrink:0;transition:background-color .15s}
+.tg::after{content:"";position:absolute;top:3px;left:3px;width:14px;height:14px;border-radius:50%;background:#333333;transition:transform .18s cubic-bezier(.2,.8,.2,1),background-color .15s}
+.tg.on{background:#FFFFFF}
+.tg.on::after{background:#000000;transform:translateX(12px)}
+.step{width:16px;height:16px;border-radius:3px;background:#FFFFFF;color:#000000;font-size:10px;font-weight:700;display:inline-flex;align-items:center;justify-content:center}
+.rc{all:unset;box-sizing:border-box;cursor:pointer;height:76px;border-radius:8px;background:#1A1A1A;border:2px solid transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.rc:hover{background:#222222}
+.rc.on{background:#000000;border-color:#FFFFFF}
+.rd{width:12px;height:12px;border-radius:50%;border:1.5px solid #DDDDDD;box-sizing:border-box;display:inline-block;flex-shrink:0}
+.rd.on{background:#FFFFFF;border-color:#FFFFFF;box-shadow:inset 0 0 0 3px #FFFFFF;position:relative}
+.rd.on::after{content:"";position:absolute;inset:2.5px;border-radius:50%;background:#000000}
+.rr{all:unset;box-sizing:border-box;cursor:pointer;width:100%;border-radius:8px;border:1px solid #2A2A2A;padding:11px 16px 11px 36px;display:flex;align-items:center;justify-content:space-between;background:#000000}
+.rr.on{border:2px solid #FFFFFF;padding:10px 15px 10px 35px;background:#0A0A0A}
+.rr .rd{width:16px;height:16px}
+.rr .rd.on::after{inset:3.5px}
+.chip{height:18px;padding:0 6px;border-radius:4px;background:#1A1A1A;font-size:10px;color:#BDBDBD;display:inline-flex;align-items:center}
+.ld{display:grid;grid-template-columns:repeat(4,3px);gap:1px}
+.ld span{width:3px;height:3px;background:#5A5A5A;animation:blink 1.2s steps(1) infinite}
+@keyframes blink{0%{background:#5A5A5A}50%{background:#DDDDDD}}
+.drop{border:1px dashed #3A3A3A;border-radius:10px;height:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px}
+.card{position:relative;width:136px;height:188px;flex-shrink:0;box-sizing:border-box;border-radius:12px;padding:12px 14px 12px;display:flex;flex-direction:column}
+.dots{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.arr{all:unset;cursor:pointer;width:24px;height:24px;border-radius:50%;border:1px solid #2A2A2A;display:inline-flex;align-items:center;justify-content:center;color:#F5F5F5}
+.arr:hover{background:#1A1A1A}
+.arr.dim{color:#555555}
+.toast{position:absolute;right:32px;bottom:32px;z-index:10;min-width:260px;background:#1A1A1A;border:1px solid #2A2A2A;border-radius:8px;padding:10px 10px 10px 14px;display:flex;align-items:center;gap:12px;font-size:13px;color:#F5F5F5;animation:tin .22s cubic-bezier(.2,.8,.2,1)}
+@keyframes tin{from{transform:translateY(8px);opacity:0}to{transform:none;opacity:1}}
+@media (prefers-reduced-motion: reduce){*{animation:none !important;transition:none !important}}
+</style>
+</helmet>
+<div style="position: relative; width: 1280px; height: 2960px; box-sizing: border-box; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px">
+
+  <header style="height: 44px; padding: 0 12px; display: flex; align-items: center; justify-content: space-between">
+    <div style="display: flex; align-items: center; gap: 14px">
+      <div role="img" aria-label="planner" style="display: grid; grid-template-columns: repeat(5, 4px); gap: 1px; padding: 0 6px">
+        <sc-for list="{{logo}}" as="p" hint-placeholder-count="35"><span style="width: 4px; height: 4px; background: {{p.c}}"></span></sc-for>
+      </div>
+      <span style="font-size: 13px; font-weight: 600">Component sheet</span>
+    </div>
+    <span style="font-size: 11px; color: #9A9A9A">Navigation lives in the sidebar, see the app screens below</span>
+  </header>
+
+  <main style="width: 840px; margin: 0 auto; padding: 30px 0 120px; display: flex; flex-direction: column; gap: 56px">
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Buttons</span>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+        <button class="btn bp" style="font-weight: 500"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"></path></svg>Primary</button>
+        <button class="btn bq">Quiet</button>
+        <button class="btn bg">Ghost</button>
+        <button class="btn bd"><svg width="12" height="13" viewBox="0 0 12 13" aria-hidden="true"><path d="M1.5 3h9M4.5 3V1.5h3V3M2.5 3l.6 8.5h5.8L9.5 3M5 5.5v4M7 5.5v4" stroke="currentColor" stroke-width="1.3" fill="none"></path></svg>Delete</button>
+        <button class="btn bx" disabled="">Disabled</button>
+        <button class="btn bs">Small</button>
+      </div>
+      <div style="display: flex; gap: 12px; align-items: center">
+        <button class="btn bp bl"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"></path></svg>Add a task</button>
+        <button class="ib" aria-label="edit"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M10.5 2.5l3 3L5 14H2v-3z" stroke="currentColor" stroke-width="1.4" fill="none" stroke-linejoin="round"></path></svg></button>
+        <button class="ib f" aria-label="star"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" stroke="currentColor" stroke-width="1.3" fill="none" stroke-linejoin="round"></path></svg></button>
+        <button class="ib m" aria-label="mark done"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2" stroke="currentColor" stroke-width="1.2" fill="none"></circle><path d="M5.3 8.2 7.1 10l3.6-3.9" stroke="currentColor" stroke-width="1.2" fill="none"></path></svg></button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Segmented controls</span>
+      <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap">
+        <div class="segw" role="group" aria-label="range">
+          <sc-for list="{{range1}}" as="s" hint-placeholder-count="3"><button class="{{s.cls}}" style="min-width: 88px" onClick="{{s.pick}}">{{s.label}}</button></sc-for>
+        </div>
+        <div class="segw" role="group" aria-label="filter">
+          <sc-for list="{{filter}}" as="s" hint-placeholder-count="4"><button class="{{s.cls}}" style="padding: 0 9px" onClick="{{s.pick}}">{{s.label}}</button></sc-for>
+        </div>
+      </div>
+      <div><div class="segw big" role="group" aria-label="range">
+        <sc-for list="{{range2}}" as="s" hint-placeholder-count="3"><button class="{{s.cls}}" onClick="{{s.pick}}">{{s.label}}</button></sc-for>
+      </div></div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Underline tabs</span>
+      <div role="tablist" style="display: flex; gap: 18px">
+        <sc-for list="{{tabs}}" as="s" hint-placeholder-count="3"><button class="{{s.cls}}" role="tab" onClick="{{s.pick}}">{{s.label}}</button></sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 8px; width: 414px">
+      <span class="lab" style="margin-bottom: 6px">Fields</span>
+      <label class="fl" for="f1">Title (reading font)</label>
+      <input id="f1" class="in tt" placeholder="Finish the essay">
+      <label class="fl" for="f2" style="margin-top: 6px">Code (dot-matrix)</label>
+      <input id="f2" class="in cd" placeholder="ABC-123">
+      <span class="help">Six letters, from your other device.</span>
+      <label class="fl" for="f3" style="margin-top: 6px">Routine</label>
+      <button id="f3" class="in" style="display: flex; align-items: center; justify-content: space-between; font-weight: 600; cursor: pointer" onClick="{{cycleRoutine}}">{{routine}}<svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2.5 4l2.5 2.5L7.5 4" stroke="#9A9A9A" stroke-width="1.3" fill="none"></path></svg></button>
+      <label class="fl" for="f4" style="margin-top: 6px">With an error</label>
+      <input id="f4" class="in tt er" aria-invalid="true" aria-describedby="f4e">
+      <span id="f4e" class="err">A title is required.</span>
+      <span class="help" style="text-align: center; color: #6B6B6B">or</span>
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span class="fl">Show cancelled</span>
+        <button class="{{tg1}}" role="switch" aria-checked="{{t1}}" aria-label="show cancelled" onClick="{{flip1}}"></button>
+      </div>
+      <div style="display: flex; gap: 10px; margin-top: 6px">
+        <button class="{{tg2}}" role="switch" aria-checked="{{t2}}" aria-label="example on" onClick="{{flip2}}"></button>
+        <button class="{{tg3}}" role="switch" aria-checked="{{t3}}" aria-label="example off" onClick="{{flip3}}"></button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 10px; width: 414px">
+      <span class="lab" style="margin-bottom: 6px">Choices &amp; steps</span>
+      <div style="display: flex; align-items: center; gap: 6px"><span class="step">1</span><span class="lab" style="color: #BDBDBD">How often</span></div>
+      <div role="radiogroup" aria-label="how often" style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px">
+        <sc-for list="{{freq}}" as="f" hint-placeholder-count="3">
+          <button class="{{f.cls}}" role="radio" aria-checked="{{f.on}}" onClick="{{f.pick}}">
+            <span style="display: flex; align-items: center; gap: 6px; font-weight: 700; font-size: 13px; color: #FFFFFF"><span class="{{f.rd}}"></span>{{f.label}}</span>
+            <span style="font-size: 11px; color: #8C8C8C">{{f.sub}}</span>
+          </button>
+        </sc-for>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px; margin-top: 12px"><span class="step">2</span><span class="lab" style="color: #BDBDBD">Each day gets</span></div>
+      <div role="radiogroup" aria-label="each day gets" style="display: flex; flex-direction: column; gap: 6px">
+        <sc-for list="{{gets}}" as="g" hint-placeholder-count="2">
+          <button class="{{g.cls}}" role="radio" aria-checked="{{g.on}}" onClick="{{g.pick}}">
+            <span style="display: flex; flex-direction: column; gap: 3px; align-items: flex-start"><span style="font-size: 12px; font-weight: 700; color: #FFFFFF">{{g.label}}</span><span class="r" style="font-size: 17px; font-weight: 500; color: #F5F5F5">{{g.ex}}</span></span>
+            <span class="{{g.rd}}"></span>
+          </button>
+        </sc-for>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px; width: 290px">
+      <span class="lab">Small bits</span>
+      <div style="display: flex; align-items: center; gap: 10px">
+        <span class="chip">PDF</span><span class="chip">3/4</span><span class="chip">NEW</span>
+        <span class="ld" aria-hidden="true"><sc-for list="{{ld}}" as="d" hint-placeholder-count="16"><span style="animation-delay: {{d.dl}}"></span></sc-for></span>
+        <span class="ld" aria-hidden="true" style="grid-template-columns: repeat(6, 3px)"><sc-for list="{{ld2}}" as="d" hint-placeholder-count="24"><span style="animation-delay: {{d.dl}}"></span></sc-for></span>
+        <span class="ld" aria-hidden="true"><sc-for list="{{ld}}" as="d" hint-placeholder-count="16"><span style="animation-delay: {{d.dl2}}"></span></sc-for></span>
+        <span style="font-size: 11px; color: #9A9A9A">Saving…</span>
+      </div>
+      <div role="progressbar" aria-label="progress" aria-valuenow="62" style="height: 6px; border-radius: 3px; background: #1F1F1F; overflow: hidden"><div style="width: 62%; height: 100%; background: #FFFFFF; border-radius: 3px"></div></div>
+      <div role="progressbar" aria-label="secondary progress" aria-valuenow="35" style="height: 3px; border-radius: 2px; background: #1F1F1F; overflow: hidden; margin-top: -6px"><div style="width: 35%; height: 100%; background: #8C8C8C"></div></div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px; width: 352px">
+      <span class="lab">Drop zone</span>
+      <div class="drop">
+        <svg width="20" height="20" viewBox="0 0 20 20" aria-hidden="true"><path d="M10 13V3M6 7l4-4 4 4M3 12v4.5h14V12" stroke="#F5F5F5" stroke-width="1.5" fill="none" stroke-linejoin="round"></path></svg>
+        <span style="font-size: 13px; font-weight: 700">Drop a file</span>
+        <span style="font-size: 11px; color: #9A9A9A">ICS, CSV or JSON — or click to pick one</span>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Tiles &amp; shelf</span>
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <div style="display: flex; align-items: baseline; gap: 12px"><span class="r" style="font-size: 23px; font-weight: 800; letter-spacing: -0.01em; color: #FFFFFF">This week ›</span><span style="font-size: 11px; color: #9A9A9A">7 cards</span></div>
+        <div style="display: flex; gap: 6px">
+          <button class="{{prevCls}}" aria-label="scroll back" onClick="{{prev}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 2 3.5 5l3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+          <button class="{{nextCls}}" aria-label="scroll forward" onClick="{{next}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+        </div>
+      </div>
+      <div style="overflow: hidden; margin-right: -8px">
+        <div style="display: flex; gap: 11px; padding: 4px 8px 4px 0; transform: translateX({{shift}}px); transition: transform .35s cubic-bezier(.2,.8,.2,1)">
+          <sc-for list="{{cards}}" as="c" hint-placeholder-count="7">
+            <div style="position: relative; flex-shrink: 0">
+              <sc-if value="{{c.stack}}" hint-placeholder-val="{{false}}">
+                <div aria-hidden="true" style="position: absolute; inset: -6px -6px 6px 6px; border: 1px solid #2A2A2A; border-radius: 12px; background: #000000"></div>
+                <div aria-hidden="true" style="position: absolute; inset: -3px -3px 3px 3px; border: 1px solid #2A2A2A; border-radius: 12px; background: #000000"></div>
+              </sc-if>
+              <div class="card" style="{{c.cardSt}}">
+                <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px">
+                  <span style="font-size: 10px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{c.sub}}">{{c.group}}</span>
+                  <button class="dots" style="{{c.dotSt}}" aria-label="{{c.more}}"><svg width="10" height="3" viewBox="0 0 10 3" aria-hidden="true"><circle cx="1.5" cy="1.5" r="1.1" fill="currentColor"></circle><circle cx="5" cy="1.5" r="1.1" fill="currentColor"></circle><circle cx="8.5" cy="1.5" r="1.1" fill="currentColor"></circle></svg></button>
+                </div>
+                <span class="dm" aria-hidden="true" style="font-size: 46px; line-height: 44px; margin-top: 2px; letter-spacing: -0.02em; color: {{c.glyphCol}}">{{c.glyph}}</span>
+                <span class="r" style="margin-top: auto; font-size: 19px; line-height: 21px; font-weight: 800; color: {{c.fg}}">{{c.title}}</span>
+                <div style="display: flex; justify-content: space-between; gap: 6px; margin-top: 12px; padding-top: 8px; border-top: 1px solid {{c.rule}}; font-size: 10px; text-transform: uppercase; color: {{c.sub}}; white-space: nowrap"><span style="overflow: hidden; text-overflow: ellipsis">{{c.meta}}</span><span>{{c.count}}</span></div>
+              </div>
+            </div>
+          </sc-for>
+        </div>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Toasts</span>
+      <div style="display: flex; gap: 10px">
+        <button class="btn bq" onClick="{{toastSimple}}">Simple</button>
+        <button class="btn bq" onClick="{{toastAction}}">With action</button>
+        <button class="btn bq" onClick="{{toastSticky}}">Sticky</button>
+      </div>
+    </section>
+
+    <section style="display: flex; flex-direction: column; gap: 14px">
+      <span class="lab">Empty state</span>
+      <div style="border: 1px dashed #3A3A3A; border-radius: 12px; height: 220px; display: flex; align-items: center; justify-content: center">
+        <button class="btn bp bl"><svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="currentColor" stroke-width="1.5"></path></svg>Add a task</button>
+      </div>
+    </section>
+
+  </main>
+
+  <sc-if value="{{hasToast}}" hint-placeholder-val="{{false}}">
+    <div class="toast" role="status">
+      <span style="flex: 1">{{toastText}}</span>
+      <sc-if value="{{toastHasAction}}" hint-placeholder-val="{{false}}"><button class="btn bs" style="background: #2A2A2A" onClick="{{dismiss}}">{{toastAction2}}</button></sc-if>
+      <sc-if value="{{toastSticky2}}" hint-placeholder-val="{{false}}"><button class="ib" style="width: 24px; height: 24px" aria-label="dismiss" onClick="{{dismiss}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.4"></path></svg></button></sc-if>
+    </div>
+  </sc-if>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":2960}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var CARDS = [
+  { group: 'Exercise plan', glyph: 'Gy', title: 'Gym', meta: 'Mon · Wed · Fri', count: '11/12', tone: '#A8CC8C', fill: true },
+  { group: 'Uni — Term 1', glyph: 'Ca', title: 'Calculus (Mon)', meta: '09:00 · 2h', count: '8/9', tone: '#B5B5B5' },
+  { group: 'Morning routine', glyph: 'Wa', title: 'Water', meta: '×4 daily', count: '12/16', tone: '#E59AC2', stack: true },
+  { group: 'One-off', glyph: 'De', title: 'Dentist', meta: 'Thu 15:00', count: '1h', tone: '#7EC8C8', fill: true },
+  { group: 'Uni — Term 1', glyph: 'Ph', title: 'Physics (Tue)', meta: '11:00 · 2h', count: '6/7', tone: '#8EC8F8' },
+  { group: 'One-off', glyph: 'Es', title: 'Finish essay', meta: 'By Fri 23:59', count: '', tone: '#B7DFA0' },
+  { group: 'Morning routine', glyph: 'Vi', title: 'Vitamins', meta: 'Daily · by 12:00', count: '9/9', tone: '#E6CF8F' }
+];
+var P = ['11110','10001','10001','11110','10000','10000','10000'];
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { space: 'Personal', view: 'Tasks', r1: 'Day', f: 'All', r2: 'Day', tab: 'Month', t1: true, t2: true, t3: false, freq: 'Weekly', gets: 'times', routine: 0, shelf: 0, toast: null }; }
+  componentWillUnmount() { clearTimeout(this.tt); }
+  seg(key, labels, base, dis) {
+    var self = this;
+    return labels.map(function (l) { return { label: l, cls: base + (self.state[key] === l ? ' on' : '') + (dis && dis.indexOf(l) > -1 && self.state[key] !== l ? ' off' : ''), pick: function () { var o = {}; o[key] = l; self.setState(o); } }; });
+  }
+  showToast(kind) {
+    var self = this; clearTimeout(this.tt);
+    this.setState({ toast: kind });
+    if (kind !== 'sticky') this.tt = setTimeout(function () { self.setState({ toast: null }); }, 3200);
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var routines = ['Exercise plan', 'Uni — Term 1', 'Morning routine'];
+    var ld = [], ld2 = [];
+    for (var i = 0; i < 16; i++) ld.push({ dl: ((i * 7) % 12) / 10 + 's', dl2: (i % 4) * 0.15 + 's' });
+    for (var j = 0; j < 24; j++) ld2.push({ dl: ((j * 5) % 13) / 10 + 's' });
+    var logo = [];
+    P.forEach(function (row) { row.split('').forEach(function (b) { logo.push({ c: b === '1' ? '#F5F5F5' : 'transparent' }); }); });
+    var maxShift = 2;
+    var toasts = { simple: ['Saved.', null], action: ['Task deleted.', 'Undo'], sticky: ["Couldn't sync. Check your connection.", 'Retry'] };
+    var t = s.toast ? toasts[s.toast] : null;
+    return {
+      uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'],
+      logo: logo,
+      space: this.seg('space', ['Personal', 'Shared'], 'sg'),
+      view: this.seg('view', ['Tasks', 'Routines'], 'sg'),
+      range1: this.seg('r1', ['Day', 'Week', 'Month'], 'sg'),
+      filter: this.seg('f', ['All', 'Not done', 'Done', 'Missed'], 'sg', ['Missed']),
+      range2: this.seg('r2', ['Day', 'Week', 'Month'], 'sg'),
+      tabs: this.seg('tab', ['Month', 'Week', 'List'], 'tab'),
+      routine: routines[s.routine],
+      cycleRoutine: function () { self.setState({ routine: (s.routine + 1) % routines.length }); },
+      t1: String(s.t1), t2: String(s.t2), t3: String(s.t3),
+      tg1: 'tg' + (s.t1 ? ' on' : ''), tg2: 'tg' + (s.t2 ? ' on' : ''), tg3: 'tg' + (s.t3 ? ' on' : ''),
+      flip1: function () { self.setState({ t1: !s.t1 }); },
+      flip2: function () { self.setState({ t2: !s.t2 }); },
+      flip3: function () { self.setState({ t3: !s.t3 }); },
+      freq: [['Daily', 'Every day'], ['Weekly', 'On some days'], ['Monthly', '1st, last Fri…']].map(function (f) {
+        var on = s.freq === f[0];
+        return { label: f[0], sub: f[1], on: String(on), cls: 'rc' + (on ? ' on' : ''), rd: 'rd' + (on ? ' on' : ''), pick: function () { self.setState({ freq: f[0] }); } };
+      }),
+      gets: [['times', 'Fixed times', '18:00, or 08:00 / 14:00 / 20:00'], ['count', 'A count', 'Water 4 times a day']].map(function (g) {
+        var on = s.gets === g[0];
+        return { label: g[1], ex: g[2], on: String(on), cls: 'rr' + (on ? ' on' : ''), rd: 'rd' + (on ? ' on' : ''), pick: function () { self.setState({ gets: g[0] }); } };
+      }),
+      ld: ld, ld2: ld2,
+      cards: CARDS.map(function (c) {
+        return Object.assign({ stack: false }, c, {
+          more: 'more for ' + c.title,
+          cardSt: c.fill ? 'background:' + c.tone : 'background:#000000;border:1px solid #2A2A2A',
+          fg: c.fill ? '#0D0D0D' : '#FFFFFF',
+          sub: c.fill ? 'rgba(0,0,0,0.55)' : '#BDBDBD',
+          rule: c.fill ? 'rgba(0,0,0,0.14)' : '#2A2A2A',
+          glyphCol: c.fill ? '#111111' : c.tone,
+          dotSt: c.fill ? 'background:rgba(0,0,0,0.38);color:#FFFFFF' : 'border:1px solid #333333;color:#F5F5F5;box-sizing:border-box'
+        });
+      }),
+      shift: -s.shelf * 147,
+      prevCls: 'arr' + (s.shelf === 0 ? ' dim' : ''),
+      nextCls: 'arr' + (s.shelf >= maxShift ? ' dim' : ''),
+      prev: function () { self.setState({ shelf: Math.max(0, s.shelf - 1) }); },
+      next: function () { self.setState({ shelf: Math.min(maxShift, s.shelf + 1) }); },
+      toastSimple: function () { self.showToast('simple'); },
+      toastAction: function () { self.showToast('action'); },
+      toastSticky: function () { self.showToast('sticky'); },
+      hasToast: !!t,
+      toastText: t ? t[0] : '',
+      toastHasAction: !!(t && t[1]),
+      toastAction2: t && t[1] ? t[1] : '',
+      toastSticky2: s.toast === 'sticky',
+      dismiss: function () { clearTimeout(self.tt); self.setState({ toast: null }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,26 @@
+# Dependencies and builds
+node_modules/
+dist/
+dist-ssr/
+*.tsbuildinfo
+apps/desktop/src-tauri/target/
+apps/desktop/src-tauri/gen/schemas/
+
+# design-taste-frontend: keep the notes, not the screenshots and reports
+.taste-skill/*
+!.taste-skill/README.md
+
+# impeccable keeps its own runtime folders ignored; config stays local
+.impeccable/config.local.json
+
+# Logs, env, OS, editors
+*.log
+.env
+.env.*
+!.env.example
+*.local
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json

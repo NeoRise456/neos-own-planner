@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tiles</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.meta{font-size:11px;line-height:15px;color:#9A9A9A}
+.card{position:relative;width:136px;height:188px;flex-shrink:0;box-sizing:border-box;border-radius:12px;padding:12px 14px;display:flex;flex-direction:column}
+.dots{all:unset;cursor:pointer;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;box-sizing:border-box}
+.dots:focus-visible,.ck:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.ck{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:8px}
+.num{width:22px;height:22px;border-radius:50%;background:#FFFFFF;color:#000000;font-size:11px;font-weight:700;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 1280px; height: 1160px; box-sizing: border-box; padding: 64px 220px; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px; display: flex; flex-direction: column; gap: 56px">
+
+  <header style="display: flex; flex-direction: column; gap: 10px">
+    <span class="lab">Tiles</span>
+    <span class="r" style="font-size: 23px; font-weight: 800; color: #FFFFFF">One task, one tile.</span>
+  </header>
+
+  <section style="display: flex; gap: 48px; align-items: flex-start">
+    <div style="position: relative; padding: 8px 0 0 8px">
+      <div class="card" style="background: #000000; border: 1px solid #2A2A2A">
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px">
+          <span style="font-size: 10px; letter-spacing: .04em; text-transform: uppercase; color: #BDBDBD">Uni — Term 1</span>
+          <button class="dots" aria-label="more for Physics" style="border: 1px solid #333333; color: #F5F5F5"><svg width="10" height="3" viewBox="0 0 10 3" aria-hidden="true"><circle cx="1.5" cy="1.5" r="1.1" fill="currentColor"></circle><circle cx="5" cy="1.5" r="1.1" fill="currentColor"></circle><circle cx="8.5" cy="1.5" r="1.1" fill="currentColor"></circle></svg></button>
+        </div>
+        <span class="dm" aria-hidden="true" style="font-size: 46px; line-height: 44px; margin-top: 2px; color: #8EC8F8">Ph</span>
+        <span class="r" style="margin-top: auto; font-size: 19px; line-height: 21px; font-weight: 800; color: #FFFFFF">Physics (Tue)</span>
+        <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px solid #2A2A2A; font-size: 10px; color: #BDBDBD"><span>11:00 · 2H</span><span>6/7</span></div>
+      </div>
+      <span class="num" style="position: absolute; left: -4px; top: 10px">1</span>
+      <span class="num" style="position: absolute; left: 140px; top: 4px">2</span>
+      <span class="num" style="position: absolute; left: -4px; top: 58px">3</span>
+      <span class="num" style="position: absolute; left: -4px; top: 150px">4</span>
+      <span class="num" style="position: absolute; left: 140px; top: 172px">5</span>
+    </div>
+    <div style="display: grid; grid-template-columns: 22px 1fr; gap: 14px 12px; align-items: baseline; max-width: 520px">
+      <span class="num">1</span><span style="line-height: 19px"><b>Group.</b> <span style="color: #BDBDBD">The routine name, or "One-off". Caps, 10px, cut off with … when long.</span></span>
+      <span class="num">2</span><span style="line-height: 19px"><b>More.</b> <span style="color: #BDBDBD">Move, cancel, edit, delete. The same menu on every task.</span></span>
+      <span class="num">3</span><span style="line-height: 19px"><b>Glyph.</b> <span style="color: #BDBDBD">The first two letters of the title in dot-matrix, in the routine's or tag's tone. It's how you spot a task across the room.</span></span>
+      <span class="num">4</span><span style="line-height: 19px"><b>Title.</b> <span style="color: #BDBDBD">Figtree 800, up to two lines, sitting on the bottom of the tile.</span></span>
+      <span class="num">5</span><span style="line-height: 19px"><b>Footer.</b> <span style="color: #BDBDBD">When, on the left. On the right, the routine's done count, or the duration for a one-off.</span></span>
+    </div>
+  </section>
+
+  <section style="display: flex; flex-direction: column; gap: 16px">
+    <span class="lab">States on a tile</span>
+    <div style="display: flex; gap: 16px; align-items: flex-start">
+      <sc-for list="{{states}}" as="c" hint-placeholder-count="5">
+        <div style="display: flex; flex-direction: column; gap: 10px; width: 136px">
+          <div style="position: relative; padding: 6px 6px 0 0">
+            <sc-if value="{{c.stack}}" hint-placeholder-val="{{false}}">
+              <div aria-hidden="true" style="position: absolute; left: 6px; top: 0; width: 136px; height: 188px; box-sizing: border-box; border: 1px solid #2A2A2A; border-radius: 12px"></div>
+              <div aria-hidden="true" style="position: absolute; left: 3px; top: 3px; width: 136px; height: 188px; box-sizing: border-box; border: 1px solid #2A2A2A; border-radius: 12px; background: #000000"></div>
+            </sc-if>
+            <div class="card" style="{{c.cardSt}}">
+              <div style="display: flex; align-items: center; justify-content: space-between; gap: 6px">
+                <span style="font-size: 10px; letter-spacing: .04em; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{c.sub}}">{{c.group}}</span>
+                <span style="{{c.badgeSt}}">{{c.badge}}</span>
+              </div>
+              <span class="dm" aria-hidden="true" style="font-size: 46px; line-height: 44px; margin-top: 2px; color: {{c.glyphCol}}">{{c.glyph}}</span>
+              <span class="r" style="margin-top: auto; font-size: 19px; line-height: 21px; font-weight: 800; color: {{c.fg}}; text-decoration: {{c.deco}}">{{c.title}}</span>
+              <div style="display: flex; justify-content: space-between; margin-top: 12px; padding-top: 8px; border-top: 1px {{c.ruleStyle}} {{c.rule}}; font-size: 10px; text-transform: uppercase; color: {{c.sub}}; white-space: nowrap"><span>{{c.meta}}</span><span>{{c.count}}</span></div>
+            </div>
+          </div>
+          <span style="font-size: 12px; font-weight: 700">{{c.name}}</span>
+          <span class="meta">{{c.desc}}</span>
+        </div>
+      </sc-for>
+    </div>
+  </section>
+
+  <section style="display: grid; grid-template-columns: 1fr 300px; gap: 40px; align-items: start">
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <span class="lab">Same task, as a row (Day view)</span>
+      <div style="display: flex; flex-direction: column; gap: 2px">
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+          <div class="row" style="{{r.rowSt}}">
+            <button class="ck" aria-label="{{r.aria}}" style="{{r.ckSt}}"><sc-if value="{{r.done}}" hint-placeholder-val="{{false}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.2 7.4 8.2 2.8" stroke="#000000" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg></sc-if></button>
+            <span class="dm" aria-hidden="true" style="font-size: 18px; width: 30px; color: {{r.glyphCol}}">{{r.glyph}}</span>
+            <span class="r" style="font-size: 15px; font-weight: 600; color: {{r.fg}}; text-decoration: {{r.deco}}">{{r.title}}</span>
+            <span style="margin-left: auto; font-size: 11px; text-transform: uppercase; color: {{r.sub}}">{{r.meta}}</span>
+          </div>
+        </sc-for>
+      </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 16px">
+      <span class="lab">Routine tile</span>
+      <div style="border-radius: 12px; background: #A8CC8C; color: #0D0D0D; padding: 14px; display: flex; flex-direction: column; gap: 10px; height: 188px; box-sizing: border-box">
+        <div style="display: flex; justify-content: space-between; font-size: 10px; text-transform: uppercase; color: rgba(0,0,0,0.55)"><span>Sep 1 → Nov 30</span><span>Active</span></div>
+        <span class="dm" aria-hidden="true" style="font-size: 46px; line-height: 44px; color: #111111">Ex</span>
+        <span class="r" style="margin-top: auto; font-size: 19px; line-height: 21px; font-weight: 800">Exercise plan</span>
+        <span class="r" style="font-size: 13px; color: rgba(0,0,0,0.65)">Get stronger and have more energy</span>
+        <div style="display: flex; align-items: center; gap: 10px; font-size: 10px; text-transform: uppercase; color: rgba(0,0,0,0.6)">
+          <div role="progressbar" aria-label="consistency" aria-valuenow="82" style="flex: 1; height: 4px; border-radius: 2px; background: rgba(0,0,0,0.15)"><div style="width: 82%; height: 100%; border-radius: 2px; background: #0D0D0D"></div></div>
+          <span>82% · 2 entries</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":1160}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var CHIP = 'height:18px;padding:0 6px;border-radius:4px;font-size:9px;display:inline-flex;align-items:center;flex-shrink:0;';
+class Component extends DCLogic {
+  renderVals() {
+    var outline = { cardSt: 'background:#000000;border:1px solid #2A2A2A', fg: '#FFFFFF', sub: '#BDBDBD', rule: '#2A2A2A', ruleStyle: 'solid', deco: 'none', stack: false };
+    var states = [
+      Object.assign({}, outline, { name: 'Not done', desc: 'Black with an outline. The glyph carries the tone.', group: 'Exercise plan', glyph: 'Gy', title: 'Gym', meta: '18:00 · 1h', count: '11/12', glyphCol: '#A8CC8C', badge: '', badgeSt: 'display:none' }),
+      { name: 'Done', desc: 'The tile fills with its tone. Ticking floods it.', group: 'Exercise plan', glyph: 'Gy', title: 'Gym', meta: 'Done 19:04', count: '12/12', cardSt: 'background:#A8CC8C', fg: '#0D0D0D', sub: 'rgba(0,0,0,0.55)', rule: 'rgba(0,0,0,0.14)', ruleStyle: 'solid', glyphCol: '#111111', deco: 'none', badge: 'DONE', badgeSt: CHIP + 'background:rgba(0,0,0,0.38);color:#FFFFFF', stack: false },
+      Object.assign({}, outline, { name: 'Missed', desc: 'The glyph goes dark grey. It can still be ticked.', group: 'Morning routine', glyph: 'Vi', title: 'Vitamins', meta: 'Was by 12:00', count: '8/9', glyphCol: '#3A3A3A', fg: '#9A9A9A', sub: '#9A9A9A', badge: 'MISSED', badgeSt: CHIP + 'background:#1A1A1A;color:#9A9A9A' }),
+      Object.assign({}, outline, { name: 'Cancelled', desc: 'Dashed edge with a struck title. It never counts.', group: 'One-off', glyph: 'De', title: 'Dentist', meta: 'Thu 15:00', count: '1h', cardSt: 'background:#000000;border:1px dashed #3A3A3A', glyphCol: '#262626', fg: '#6B6B6B', sub: '#6B6B6B', rule: '#3A3A3A', ruleStyle: 'dashed', deco: 'line-through', badge: '', badgeSt: 'display:none' }),
+      Object.assign({}, outline, { name: 'Count (2 of 4)', desc: 'Stacked edges, one for each copy still to do.', group: 'Morning routine', glyph: 'Wa', title: 'Water', meta: '×4 daily', count: '2/4', glyphCol: '#E59AC2', stack: true, badge: '', badgeSt: 'display:none' })
+    ];
+    var rows = [
+      { title: 'Calculus (Mon)', glyph: 'Ca', tone: '#B5B5B5', meta: '09:00 · 2h', s: 'done' },
+      { title: 'Gym', glyph: 'Gy', tone: '#A8CC8C', meta: '18:00 · 1h', s: 'todo' },
+      { title: 'Vitamins', glyph: 'Vi', tone: '#E6CF8F', meta: 'Missed · by 12:00', s: 'missed' },
+      { title: 'Dentist', glyph: 'De', tone: '#7EC8C8', meta: 'Cancelled', s: 'cx' }
+    ].map(function (r) {
+      var d = r.s === 'done';
+      return Object.assign({}, r, {
+        done: d,
+        aria: (d ? 'untick ' : 'tick ') + r.title,
+        rowSt: d ? 'background:#0A0A0A' : '',
+        ckSt: d ? 'background:' + r.tone : r.s === 'cx' ? 'border:1.5px dashed #3A3A3A' : r.s === 'missed' ? 'border:1.5px solid #3A3A3A;background:#1A1A1A' : 'border:1.5px solid #6B6B6B',
+        glyphCol: r.s === 'missed' ? '#3A3A3A' : r.s === 'cx' ? '#262626' : r.tone,
+        fg: d ? '#9A9A9A' : r.s === 'todo' ? '#FFFFFF' : '#6B6B6B',
+        sub: r.s === 'todo' ? '#BDBDBD' : '#6B6B6B',
+        deco: r.s === 'cx' ? 'line-through' : 'none'
+      });
+    });
+    return { uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'], states: states, rows: rows };
+  }
+}
+</script>
+</body>
+</html>

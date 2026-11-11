@@ -1,0 +1,143 @@
+@import "tailwindcss";
+@import "./tokens.css";
+
+/*
+ * UI voice: Departure Mono (Helena Zhang, SIL OFL — v1.500 from github.com/rektdeckard/departure-mono).
+ * tokens.css called the pixel font a stand-in for it. It replaces Pixelify Sans, which drew
+ * 5/S, 0/O, 2/Z, G/B and C/O the same. One weight only, at every weight: crisp at 11px
+ * multiples. Never faux-bold it (see font-synthesis below).
+ */
+@font-face {
+  font-family: "Departure Mono";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url("../assets/fonts/DepartureMono-Regular.woff2") format("woff2");
+}
+
+/* A few extra tokens the screens use that tokens.css doesn't name. */
+@theme {
+  --color-ink-hover: #0f0f0f; /* row hover */
+  --color-ink-line-mid: #1f1f1f; /* progress track, sidebar rail */
+  --color-fg-muted: #8c8c8c; /* inactive tab / segment text */
+  --color-fg-ghost: #a3a3a3; /* ghost button text */
+  --color-fg-disabled: #7a7a7a;
+  --color-primary-hover: #dcdcdc;
+  --color-danger-fill-hover: #4a1515;
+  --color-error-line: #5a1c1c;
+  --color-panel: #050505; /* task side panel */
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+  /* App shell: the window itself never scrolls (that caused a second scrollbar next to
+     the page's). Only areas inside the shell scroll — see routes/__root.tsx. */
+  html,
+  body {
+    overflow: hidden;
+  }
+  body {
+    margin: 0;
+    /* Figtree and Doto have real weights; Departure Mono has one and must not be smeared into fake bold. */
+    font-synthesis: none;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+  button {
+    font-family: inherit;
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
+  }
+  :focus-visible {
+    outline: 2px solid var(--color-fg-white);
+    outline-offset: 2px;
+  }
+  ::selection {
+    background: #ffffff;
+    color: #000000;
+  }
+  /*
+   * Scrollbars: a plain gray rectangle (brighter on hover/drag), no track, no arrow buttons.
+   * Uses ::-webkit-scrollbar (WebView2 is Chromium). Don't add the standard
+   * scrollbar-width / scrollbar-color properties anywhere — Chromium ignores
+   * these rules whenever those are set.
+   */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+    background: transparent;
+  }
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: var(--color-ink-line-dash); /* #3A3A3A: visible on black, doesn't shout */
+    border-radius: 0;
+  }
+  ::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:active {
+    background: var(--color-fg-placeholder); /* #6B6B6B */
+  }
+  ::-webkit-scrollbar-button {
+    display: none;
+    width: 0;
+    height: 0;
+  }
+}
+
+/* Reading voice: Figtree */
+@utility read {
+  font-family: var(--font-read);
+}
+/* Meta: UI 11 caps tabular */
+@utility meta {
+  font-size: 11px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+@keyframes toast-in {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+@keyframes blink {
+  0% {
+    background: #5a5a5a;
+  }
+  50% {
+    background: #dddddd;
+  }
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(12px);
+  }
+}

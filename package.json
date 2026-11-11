@@ -1,0 +1,10 @@
+{
+  "name": "neos-own-planner",
+  "private": true,
+  "scripts": {
+    "dev": "pnpm --filter desktop tauri dev",
+    "dev:web": "pnpm --filter desktop dev",
+    "build": "pnpm --filter desktop build",
+    "typecheck": "pnpm -r exec tsc --noEmit"
+  }
+}

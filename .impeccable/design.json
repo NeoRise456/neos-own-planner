@@ -1,0 +1,822 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-11T18:16:16+00:00",
+  "title": "Design System: planner",
+  "extensions": {
+    "colorMeta": {
+      "ink-bg": {
+        "role": "neutral",
+        "displayName": "Board Black",
+        "canonical": "#000000",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-panel": {
+        "role": "neutral",
+        "displayName": "Panel Black",
+        "canonical": "#050505",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-raised": {
+        "role": "neutral",
+        "displayName": "Raised Black",
+        "canonical": "#0A0A0A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-hover": {
+        "role": "neutral",
+        "displayName": "Hover Black",
+        "canonical": "#0F0F0F",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-well": {
+        "role": "neutral",
+        "displayName": "Well Grey",
+        "canonical": "#111111",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-line-faint": {
+        "role": "neutral",
+        "displayName": "Ink Line Faint",
+        "canonical": "#141414",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-fill": {
+        "role": "neutral",
+        "displayName": "Fill Grey",
+        "canonical": "#1A1A1A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-line-soft": {
+        "role": "neutral",
+        "displayName": "Ink Line Soft",
+        "canonical": "#1A1A1A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-line-mid": {
+        "role": "neutral",
+        "displayName": "Ink Line Mid",
+        "canonical": "#1F1F1F",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-fill-hover": {
+        "role": "neutral",
+        "displayName": "Ink Fill Hover",
+        "canonical": "#262626",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-line": {
+        "role": "neutral",
+        "displayName": "Line Grey",
+        "canonical": "#2A2A2A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "ink-line-dash": {
+        "role": "neutral",
+        "displayName": "Dash Grey",
+        "canonical": "#3A3A3A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-white": {
+        "role": "primary",
+        "displayName": "Board White",
+        "canonical": "#FFFFFF",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg": {
+        "role": "neutral",
+        "displayName": "Fg",
+        "canonical": "#F5F5F5",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-secondary": {
+        "role": "neutral",
+        "displayName": "Fg Secondary",
+        "canonical": "#BDBDBD",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-ghost": {
+        "role": "neutral",
+        "displayName": "Fg Ghost",
+        "canonical": "#A3A3A3",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-label": {
+        "role": "neutral",
+        "displayName": "Fg Label",
+        "canonical": "#9A9A9A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-muted": {
+        "role": "neutral",
+        "displayName": "Fg Muted",
+        "canonical": "#8C8C8C",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-disabled": {
+        "role": "neutral",
+        "displayName": "Fg Disabled",
+        "canonical": "#7A7A7A",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-placeholder": {
+        "role": "neutral",
+        "displayName": "Fg Placeholder",
+        "canonical": "#6B6B6B",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "fg-on-tone": {
+        "role": "neutral",
+        "displayName": "Fg On Tone",
+        "canonical": "#0D0D0D",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "primary-hover": {
+        "role": "primary",
+        "displayName": "Primary Hover",
+        "canonical": "#DCDCDC",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "danger": {
+        "role": "signal",
+        "displayName": "Danger Red",
+        "canonical": "#FF4D4D",
+        "tonalRamp": [
+          "#290000",
+          "#540000",
+          "#82000D",
+          "#B41722",
+          "#E6353A",
+          "#FF6E68",
+          "#FF9E95",
+          "#FFCDC3"
+        ]
+      },
+      "danger-fill": {
+        "role": "signal",
+        "displayName": "Danger Fill",
+        "canonical": "#3A1111",
+        "tonalRamp": [
+          "#160606",
+          "#361D1C",
+          "#593836",
+          "#7F5452",
+          "#A67370",
+          "#C69895",
+          "#E7BEBB",
+          "#FFE5E2"
+        ]
+      },
+      "danger-fill-hover": {
+        "role": "signal",
+        "displayName": "Danger Fill Hover",
+        "canonical": "#4A1515",
+        "tonalRamp": [
+          "#180504",
+          "#3A1B19",
+          "#5E3532",
+          "#85514E",
+          "#AD6F6B",
+          "#CD9490",
+          "#EDBBB7",
+          "#FFE3DF"
+        ]
+      },
+      "error": {
+        "role": "signal",
+        "displayName": "Error Red",
+        "canonical": "#FF3B3B",
+        "tonalRamp": [
+          "#2B0000",
+          "#570000",
+          "#860000",
+          "#B90014",
+          "#EC262C",
+          "#FF685F",
+          "#FF9A8E",
+          "#FFCABE"
+        ]
+      },
+      "tone-moss": {
+        "role": "tone",
+        "displayName": "Moss",
+        "canonical": "#A8CC8C",
+        "tonalRamp": [
+          "#050F00",
+          "#1A2B0A",
+          "#344A20",
+          "#4F6B38",
+          "#6D8E52",
+          "#92B07B",
+          "#B9D3A5",
+          "#E1F7D0"
+        ]
+      },
+      "tone-sea": {
+        "role": "tone",
+        "displayName": "Sea",
+        "canonical": "#7EC8C8",
+        "tonalRamp": [
+          "#000F10",
+          "#002C2C",
+          "#164B4B",
+          "#2D6D6D",
+          "#479090",
+          "#74B2B2",
+          "#A1D5D4",
+          "#CEF8F8"
+        ]
+      },
+      "tone-rose": {
+        "role": "tone",
+        "displayName": "Rose",
+        "canonical": "#E59AC2",
+        "tonalRamp": [
+          "#19030F",
+          "#3A172B",
+          "#5E304A",
+          "#864B6B",
+          "#AE688F",
+          "#CE8FB0",
+          "#EEB6D3",
+          "#FFDFF7"
+        ]
+      },
+      "tone-sky": {
+        "role": "tone",
+        "displayName": "Sky",
+        "canonical": "#8EC8F8",
+        "tonalRamp": [
+          "#000C1C",
+          "#08273E",
+          "#1F4563",
+          "#36668B",
+          "#5088B5",
+          "#7BABD3",
+          "#A5CFF2",
+          "#D1F3FF"
+        ]
+      },
+      "tone-sage": {
+        "role": "tone",
+        "displayName": "Sage",
+        "canonical": "#B7DFA0",
+        "tonalRamp": [
+          "#040F00",
+          "#192B0C",
+          "#324A22",
+          "#4D6C3A",
+          "#6A8F54",
+          "#90B17D",
+          "#B7D4A7",
+          "#DFF7D2"
+        ]
+      },
+      "tone-stone": {
+        "role": "tone",
+        "displayName": "Stone",
+        "canonical": "#B5B5B5",
+        "tonalRamp": [
+          "#0B0B0B",
+          "#252525",
+          "#424242",
+          "#616161",
+          "#828282",
+          "#A5A5A5",
+          "#C9C9C9",
+          "#EEEEEE"
+        ]
+      },
+      "tone-sand": {
+        "role": "tone",
+        "displayName": "Sand",
+        "canonical": "#E6CF8F",
+        "tonalRamp": [
+          "#120A00",
+          "#2F2401",
+          "#4F4014",
+          "#715F2A",
+          "#968043",
+          "#B7A46F",
+          "#D8C89B",
+          "#FBEEC8"
+        ]
+      },
+      "tone-lilac": {
+        "role": "tone",
+        "displayName": "Lilac",
+        "canonical": "#B9A6F0",
+        "tonalRamp": [
+          "#0D061E",
+          "#281D40",
+          "#463867",
+          "#665690",
+          "#8875BA",
+          "#A99AD8",
+          "#CDC0F6",
+          "#F1E7FF"
+        ]
+      },
+      "tone-peach": {
+        "role": "tone",
+        "displayName": "Peach",
+        "canonical": "#F4B48E",
+        "tonalRamp": [
+          "#190500",
+          "#3A1C09",
+          "#5E371E",
+          "#855435",
+          "#AD724F",
+          "#CD9878",
+          "#EDBEA3",
+          "#FFE5CE"
+        ]
+      },
+      "tone-coral": {
+        "role": "tone",
+        "displayName": "Coral",
+        "canonical": "#F09C9C",
+        "tonalRamp": [
+          "#1B0304",
+          "#3E1719",
+          "#643031",
+          "#8D4B4C",
+          "#B7696A",
+          "#D68F8F",
+          "#F5B7B6",
+          "#FFDFDE"
+        ]
+      },
+      "tone-butter": {
+        "role": "tone",
+        "displayName": "Butter",
+        "canonical": "#EDE08C",
+        "tonalRamp": [
+          "#100B00",
+          "#2C2500",
+          "#4C4301",
+          "#6D6217",
+          "#90842F",
+          "#B2A762",
+          "#D4CB91",
+          "#F7F0C0"
+        ]
+      },
+      "tone-mint": {
+        "role": "tone",
+        "displayName": "Mint",
+        "canonical": "#96DCC0",
+        "tonalRamp": [
+          "#001008",
+          "#052D20",
+          "#1C4C3B",
+          "#346E59",
+          "#4E9279",
+          "#7AB39C",
+          "#A5D6C1",
+          "#D1F9E8"
+        ]
+      },
+      "tone-periwinkle": {
+        "role": "tone",
+        "displayName": "Periwinkle",
+        "canonical": "#A6B6F6",
+        "tonalRamp": [
+          "#06091D",
+          "#1C2240",
+          "#363F67",
+          "#525E90",
+          "#707EBA",
+          "#94A2D8",
+          "#BAC7F6",
+          "#E2EDFF"
+        ]
+      },
+      "tone-orchid": {
+        "role": "tone",
+        "displayName": "Orchid",
+        "canonical": "#D8A4E8",
+        "tonalRamp": [
+          "#140419",
+          "#32193A",
+          "#54335E",
+          "#784F84",
+          "#9D6DAC",
+          "#BE92CB",
+          "#DFB9EB",
+          "#FFE2FF"
+        ]
+      },
+      "tone-lime": {
+        "role": "tone",
+        "displayName": "Lime",
+        "canonical": "#CBE39A",
+        "tonalRamp": [
+          "#080E00",
+          "#202903",
+          "#3B4818",
+          "#58692E",
+          "#778C47",
+          "#9BAE72",
+          "#C0D19E",
+          "#E7F6CB"
+        ]
+      },
+      "tone-slate": {
+        "role": "tone",
+        "displayName": "Slate",
+        "canonical": "#A4B6C4",
+        "tonalRamp": [
+          "#060C10",
+          "#1E262D",
+          "#38444C",
+          "#55636E",
+          "#748592",
+          "#98A7B3",
+          "#BECBD6",
+          "#E5F0F9"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Big stat",
+        "purpose": "Routine consistency %."
+      },
+      "headline": {
+        "displayName": "Page title",
+        "purpose": "Day and page headings; scales down on Todo to keep the day switch on its row."
+      },
+      "title": {
+        "displayName": "Panel title",
+        "purpose": "Task panel and dialog titles."
+      },
+      "body": {
+        "displayName": "Task title",
+        "purpose": "Row titles and anything the user wrote."
+      },
+      "ui": {
+        "displayName": "UI",
+        "purpose": "Buttons, nav, form text (Departure Mono)."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Section labels and meta, caps, tabular."
+      },
+      "glyph": {
+        "displayName": "Glyph",
+        "purpose": "Two-letter task glyphs, the clock, the logo (Doto, square dots)."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-snap",
+        "value": "cubic-bezier(.2,.8,.2,1)",
+        "purpose": "Every transition."
+      },
+      {
+        "name": "hover",
+        "value": "120ms",
+        "purpose": "Hover color changes."
+      },
+      {
+        "name": "state",
+        "value": "200-350ms",
+        "purpose": "Tile fill, progress bar, toggle knob, panel slide-in."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "window-min",
+        "value": "900px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "The one white action per area.",
+      "html": "<button class=\"ds-btn-primary\">Done</button>",
+      "css": ".ds-btn-primary { font-family: 'Departure Mono', monospace; height:32px; padding:0 14px; border:0; border-radius:6px; font-size:13px; background:#FFFFFF; color:#000; cursor:pointer; transition:background-color 120ms cubic-bezier(.2,.8,.2,1); } .ds-btn-primary:hover { background:#DCDCDC; } .ds-btn-primary:active { background:#BDBDBD; } .ds-btn-primary:focus-visible { outline:2px solid #FFFFFF; outline-offset:2px; }"
+    },
+    {
+      "name": "Quiet Button",
+      "kind": "button",
+      "refersTo": "button-quiet",
+      "description": "Secondary actions: Move, Edit.",
+      "html": "<button class=\"ds-btn-quiet\">Move</button>",
+      "css": ".ds-btn-quiet { font-family: 'Departure Mono', monospace; height:32px; padding:0 14px; border:0; border-radius:6px; font-size:13px; background:#1A1A1A; color:#F5F5F5; cursor:pointer; transition:background-color 120ms cubic-bezier(.2,.8,.2,1); } .ds-btn-quiet:hover { background:#262626; } .ds-btn-quiet:active { background:#2A2A2A; } .ds-btn-quiet:focus-visible { outline:2px solid #FFFFFF; outline-offset:2px; }"
+    },
+    {
+      "name": "Danger Button",
+      "kind": "button",
+      "refersTo": "button-danger",
+      "description": "Delete only.",
+      "html": "<button class=\"ds-btn-danger\">Delete routine</button>",
+      "css": ".ds-btn-danger { font-family: 'Departure Mono', monospace; height:32px; padding:0 14px; border:0; border-radius:6px; font-size:13px; background:#3A1111; color:#FF4D4D; cursor:pointer; transition:background-color 120ms; } .ds-btn-danger:hover { background:#4A1515; } .ds-btn-danger:focus-visible { outline:2px solid #FFFFFF; outline-offset:2px; }"
+    },
+    {
+      "name": "Quick-add Input",
+      "kind": "input",
+      "refersTo": "input",
+      "description": "Title + Enter adds a one-off task.",
+      "html": "<label class=\"ds-quickadd\"><span aria-hidden=\"true\">+</span><input placeholder=\"Add a task\"><kbd>Enter</kbd></label>",
+      "css": ".ds-quickadd { display:flex; align-items:center; gap:10px; height:48px; padding:0 14px; background:#000; border:1px solid #2A2A2A; border-radius:8px; color:#6B6B6B; } .ds-quickadd:focus-within { border-color:#8C8C8C; } .ds-quickadd input { flex:1; background:transparent; border:0; outline:0; color:#F5F5F5; font:500 16px 'Figtree Variable', Figtree, system-ui, sans-serif; } .ds-quickadd input::placeholder { color:#6B6B6B; } .ds-quickadd kbd { font:11px 'Departure Mono', monospace; color:#BDBDBD; border:1px solid #2A2A2A; border-radius:4px; padding:2px 6px; }"
+    },
+    {
+      "name": "Sidebar Nav",
+      "kind": "nav",
+      "refersTo": "nav-item-active",
+      "description": "Active item is a white pill.",
+      "html": "<nav class=\"ds-nav\"><a class=\"ds-nav-item is-active\">Todo <span>8</span></a><a class=\"ds-nav-item\">Calendar</a><a class=\"ds-nav-item\">Routines <span>3</span></a></nav>",
+      "css": ".ds-nav { display:flex; flex-direction:column; gap:2px; width:196px; padding:12px; background:#000; } .ds-nav-item { display:flex; justify-content:space-between; align-items:center; height:36px; padding:0 10px; border-radius:8px; font:13px 'Departure Mono', monospace; color:#9A9A9A; text-decoration:none; cursor:pointer; transition:background-color 120ms, color 120ms; } .ds-nav-item span { font-size:11px; color:#6B6B6B; } .ds-nav-item:hover { background:#141414; color:#F5F5F5; } .ds-nav-item.is-active { background:#FFFFFF; color:#000; } .ds-nav-item.is-active span { color:#000; }"
+    },
+    {
+      "name": "Chip",
+      "kind": "chip",
+      "refersTo": "chip",
+      "description": "Period and status chips; the active status chip is white.",
+      "html": "<span class=\"ds-chip\">1 Sep - 30 Nov</span> <span class=\"ds-chip is-active\">Active</span>",
+      "css": ".ds-chip { display:inline-flex; align-items:center; height:22px; padding:0 8px; border-radius:4px; background:#1A1A1A; color:#BDBDBD; font:11px 'Departure Mono', monospace; letter-spacing:.08em; text-transform:uppercase; } .ds-chip.is-active { background:#FFFFFF; color:#000; }"
+    },
+    {
+      "name": "Task Row",
+      "kind": "custom",
+      "refersTo": "task-row",
+      "description": "Check, Doto glyph in the tone, Figtree title, meta.",
+      "html": "<div class=\"ds-row\"><button class=\"ds-check\" aria-label=\"Mark done: Gym\"></button><span class=\"ds-glyph\" aria-hidden=\"true\">Gy</span><span class=\"ds-title\">Gym</span><span class=\"ds-meta\">18:00-19:00</span></div>",
+      "css": ".ds-row { display:flex; align-items:center; gap:12px; width:420px; height:48px; padding:0 12px; border-radius:8px; background:#000; transition:background-color 120ms; } .ds-row:hover { background:#0F0F0F; } .ds-check { width:20px; height:20px; border-radius:50%; border:1.5px solid #6B6B6B; background:transparent; cursor:pointer; } .ds-check:hover { border-color:#F5F5F5; } .ds-check:focus-visible { outline:2px solid #FFFFFF; outline-offset:2px; } .ds-glyph { width:28px; font:900 18px 'Doto Variable', Doto, monospace; font-variation-settings:'ROND' 0; color:#A8CC8C; } .ds-title { flex:1; font:600 15px 'Figtree Variable', Figtree, sans-serif; color:#FFFFFF; } .ds-meta { font:11px 'Departure Mono', monospace; color:#BDBDBD; letter-spacing:.04em; }"
+    },
+    {
+      "name": "Tile",
+      "kind": "card",
+      "refersTo": "tile",
+      "description": "Outline when not done; filled with the tone when done.",
+      "html": "<div class=\"ds-tile\"><span class=\"ds-tile-glyph\">Gy</span><span class=\"ds-tile-title\">Gym</span></div><div class=\"ds-tile is-done\"><span class=\"ds-tile-glyph\">Wa</span><span class=\"ds-tile-title\">Water</span></div>",
+      "css": ".ds-tile { display:inline-flex; flex-direction:column; justify-content:space-between; box-sizing:border-box; width:136px; height:188px; padding:14px; margin-right:12px; border:1px solid #2A2A2A; border-radius:12px; background:#000; color:#A8CC8C; } .ds-tile-glyph { font:900 46px 'Doto Variable', Doto, monospace; font-variation-settings:'ROND' 0; } .ds-tile-title { font:800 19px 'Figtree Variable', Figtree, sans-serif; color:#FFFFFF; } .ds-tile.is-done { background:#E59AC2; border-color:#E59AC2; color:#0D0D0D; } .ds-tile.is-done .ds-tile-title { color:#0D0D0D; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "Lights on a black board",
+    "overview": "The app is a dark board. Chrome stays black and grey; color only lights up where the user's tasks and routines are. A routine's tone is a small light: it marks the glyph, the check, the tile and the calendar block, and nothing else. When a task is done, its light turns fully on (the tile fills with the tone). The board itself never competes with the lights.\n\nPersonality comes from three voices, not from decoration: a pixel UI font (Departure Mono) for labels, buttons, times and counts; a dot-matrix glyph font (Doto, square dots) for the two-letter task glyphs, the clock and the logo; and Figtree for anything the user wrote and for headings. Surfaces lift by grey steps, never by shadow. Components are **chunky and tactile**: generous hit areas, solid flat fills and clear hover and pressed states, like keys on a device; still flat, still no shadows.\n\nStates read from the element itself, with no legend: done is filled with the tone, missed is grey, cancelled is dashed or struck through. Missed is a fact, never a guilt trip, so it is never red.",
+    "keyCharacteristics": [
+      "Pure black canvas; depth by grey steps (`#050505` → `#262626`), no shadows on anything at rest.",
+      "White is the action: one white primary per area, the active nav pill, the selected item, deadlines.",
+      "Color only through tones (16 pastel presets + custom), only on task-related marks.",
+      "Three type voices: pixel UI, dot-matrix glyph, Figtree for reading.",
+      "State visible without a legend.",
+      "Chunky, tactile, flat controls."
+    ],
+    "rules": [
+      {
+        "name": "The Lights Rule",
+        "body": "Tones appear only on task-related marks: glyphs, checks, tiles, mini squares, calendar blocks, routine tone squares. Never on chrome, buttons, headings or backgrounds.",
+        "section": "colors"
+      },
+      {
+        "name": "The One White Rule",
+        "body": "One white primary button per area. White also marks \"active\" and \"selected\"; it is never decoration.",
+        "section": "colors"
+      },
+      {
+        "name": "The Readable Light Rule",
+        "body": "Filled tiles put dark text (`#0D0D0D`) on the tone, so a tone must stay light. Custom colors below luminance 0.3 get a readability warning in the picker. Always resolve tones through `toneHex()` / `tint()`.",
+        "section": "colors"
+      },
+      {
+        "name": "The Three Voices Rule",
+        "body": "UI text is Departure Mono, the user's own words and headings are Figtree, glyphs are Doto. Never mix the roles.",
+        "section": "typography"
+      },
+      {
+        "name": "The No Fake Bold Rule",
+        "body": "Departure Mono has one weight; `font-synthesis: none` stops faux bold. Never rely on weight for state in the UI voice; use color, fill or a white pill.",
+        "section": "typography"
+      },
+      {
+        "name": "The Grey Step Rule",
+        "body": "To separate two surfaces, step the grey. Never add a shadow or a glow.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "**Do** keep the page `#000000` and separate surfaces with grey steps.",
+      "**Do** put color only on task marks, resolved through `toneHex()` / `tint()`.",
+      "**Do** keep one white primary per area.",
+      "**Do** use Departure Mono for UI, Figtree for user text and headings, Doto for glyphs, the clock and the logo.",
+      "**Do** make controls chunky and tactile: generous hit areas, solid fills, clear hover and pressed states.",
+      "**Do** keep every text at 11px or more and essential text at fg-label (`#9A9A9A`) or brighter; `#6B6B6B` is for placeholders and decorative icons only.",
+      "**Do** keep a 2px white focus ring (offset 2) on everything focusable and respect `prefers-reduced-motion`.",
+      "**Do** keep empty states plain: a dim glyph tile, a heading, one line of help, actions (`EmptyState`), or just a short line (\"Nothing planned for the day\")."
+    ],
+    "donts": [
+      "**Don't** add shadows, glows, gradients or a light theme.",
+      "**Don't** put tones on chrome, buttons or backgrounds.",
+      "**Don't** use red for missed tasks; missed is grey and never a guilt trip.",
+      "**Don't** fake-bold Departure Mono or rely on weight for state.",
+      "**Don't** draw dashed boxes around empty states; dashed borders mean a real drop zone or cancelled.",
+      "**Don't** let a title row wrap its controls below it; scale or truncate the title instead.",
+      "**Don't** use emoji or exclamation marks."
+    ]
+  }
+}

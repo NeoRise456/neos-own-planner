@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Protocols</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.ib{all:unset;box-sizing:border-box;width:28px;height:28px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;color:#6B6B6B;opacity:0;transition:opacity .12s}
+.st:hover .ib,.ib:focus-visible{opacity:1}
+.ib:hover{background:#1A1A1A;color:#FF4D4D}
+.ib:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.st{display:grid;grid-template-columns:34px 1fr 28px;gap:10px;align-items:center;min-height:44px;padding:0 4px;border-bottom:1px solid #141414;border-radius:6px}
+.st:hover{background:#0A0A0A}
+.qa{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border:1px solid #2A2A2A;border-radius:8px;background:#000000}
+.qa:focus-within{border-color:#8C8C8C}
+.qa input{all:unset;flex:1;font-family:'Figtree',sans-serif;font-size:15px;font-weight:500;color:#F5F5F5}
+.qa input::placeholder{color:#6B6B6B}
+.kbd{font-size:11px;color:#9A9A9A;border:1px solid #2A2A2A;border-radius:4px;padding:1px 6px}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1060px; box-sizing: border-box; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <div style="flex: 1 1 220px; max-width: 220px">
+    <dc-import name="Sidebar" active="protocols" sub="{{sub}}" ui-font="{{uiFontName}}" hint-size="220px,820px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 560px; min-width: 0">
+  <main style="box-sizing: border-box; padding: 44px 48px 80px">
+    <div style="max-width: 680px; display: flex; flex-direction: column">
+
+      <span class="lab">Protocol</span>
+      <div style="display: flex; gap: 18px; align-items: center; margin-top: 10px">
+        <div aria-hidden="true" style="width: 64px; height: 64px; border-radius: 12px; border: 1px solid #2A2A2A; display: flex; align-items: center; justify-content: center; flex-shrink: 0"><span class="dm" style="font-size: 30px; color: {{p.tone}}">{{p.g}}</span></div>
+        <div style="display: flex; flex-direction: column; gap: 8px; min-width: 0">
+          <h1 class="r" style="margin: 0; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF">{{p.title}}</h1>
+          <div style="display: flex; gap: 6px; flex-wrap: wrap; align-items: center">
+            <span style="font-size: 11px; color: #9A9A9A">Used by</span>
+            <sc-for list="{{p.used}}" as="u" hint-placeholder-count="1">
+              <a href="Routines.dc.html" style="height: 24px; padding: 0 8px; border-radius: 6px; border: 1px solid #2A2A2A; display: inline-flex; align-items: center; gap: 6px; font-size: 11px; text-decoration: none; color: #F5F5F5"><span style="width: 8px; height: 8px; border-radius: 2px; background: {{u.tone}}"></span>{{u.label}}<span style="color: #6B6B6B">· {{u.kind}}</span></a>
+            </sc-for>
+          </div>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 34px; padding-bottom: 6px; border-bottom: 1px solid #1A1A1A">
+        <span class="lab">Steps</span>
+        <span style="font-size: 11px; color: #6B6B6B">{{count}}</span>
+      </div>
+      <ol style="list-style: none; margin: 0; padding: 0">
+        <sc-for list="{{steps}}" as="s" hint-placeholder-count="16">
+          <li class="st">
+            <span style="font-size: 11px; color: #6B6B6B; font-variant-numeric: tabular-nums">{{s.n}}</span>
+            <span class="r" style="font-size: 15px; line-height: 21px; padding: 10px 0; color: #F5F5F5">{{s.t}}</span>
+            <button class="ib" aria-label="{{s.del}}" onClick="{{s.remove}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 2l6 6M8 2l-6 6" stroke="currentColor" stroke-width="1.4"></path></svg></button>
+          </li>
+        </sc-for>
+      </ol>
+
+      <label class="qa" style="margin-top: 16px">
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="#6B6B6B" stroke-width="1.5"></path></svg>
+        <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Add a step</span>
+        <input type="text" placeholder="Add a step" value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}">
+        <span class="kbd">Enter</span>
+      </label>
+      <span style="margin-top: 12px; font-size: 11px; color: #6B6B6B">A protocol is just a reminder. You follow it yourself, and editing it updates every task that uses it.</span>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":1060}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var P = {
+  shower: { title: 'Shower', g: 'Sh', tone: '#E6CF8F', used: [{ label: 'Shower', kind: 'Morning routine', tone: '#E6CF8F' }], steps: ['Get the drier and clothes, go to the bathroom', 'Turn on the warm water, wait 2 min', 'Open the shower, make sure the temperature is right', 'Pick a playlist (≈ 4 songs) or a video if washing hair', 'Wet hair', 'Shampoo if needed', 'Rinse head again', 'Soap body, rinse body', 'Wash genitals, butt, ears and neck', 'Face cleanser for 2 min', 'Rinse full body again', 'Close the shower, apply leave-in conditioner', 'Dry body with the towel, then dry ears', 'Put on headphones, pick a 10 min video, dry hair', 'Get dressed', 'Dirty clothes in the bin, drier back in its place'] },
+  gym: { title: 'Gym warm-up', g: 'Gy', tone: '#A8CC8C', used: [{ label: 'Gym', kind: 'Exercise plan', tone: '#A8CC8C' }], steps: ['5 min easy bike', 'Hip circles and leg swings', 'Empty bar, 2 × 10', 'One light set per lift'] }
+};
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 'shower', draft: '', steps: { shower: P.shower.steps.slice(), gym: P.gym.steps.slice() } }; }
+  setSteps(list) { var all = Object.assign({}, this.state.steps); all[this.state.sel] = list; this.setState({ steps: all }); }
+  renderVals() {
+    var self = this, s = this.state, p = P[s.sel], steps = s.steps[s.sel];
+    var sub = [
+      { label: 'Shower', key: 'shower', tone: '#E6CF8F' },
+      { label: 'Gym warm-up', key: 'gym', tone: '#A8CC8C' },
+      { label: 'New protocol', isNew: true }
+    ].map(function (it) { return Object.assign({}, it, { current: it.key === s.sel, pick: it.key ? function () { self.setState({ sel: it.key, draft: '' }); } : function () {} }); });
+    return {
+      uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'],
+      uiFontName: this.props.uiFont || 'Pixelify Sans',
+      sub: sub, p: p,
+      count: steps.length + ' steps',
+      steps: steps.map(function (t, i) {
+        return { n: (i < 9 ? '0' : '') + (i + 1), t: t, del: 'Remove step ' + (i + 1), remove: function () { self.setSteps(steps.filter(function (_, j) { return j !== i; })); } };
+      }),
+      draft: s.draft,
+      onDraft: function (e) { self.setState({ draft: e.target.value }); },
+      onKey: function (e) {
+        if (e.key !== 'Enter') return;
+        var v = s.draft.trim();
+        if (!v) return;
+        var all = Object.assign({}, s.steps); all[s.sel] = steps.concat([v]);
+        self.setState({ steps: all, draft: '' });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Todo</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.btn{all:unset;box-sizing:border-box;height:32px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;background:#1A1A1A;color:#F5F5F5}
+.btn:hover{background:#262626}
+.btn:focus-visible,.arr:focus-visible,.ck:focus-visible,.tl:focus-visible,.tog:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.arr{all:unset;cursor:pointer;width:32px;height:32px;border-radius:50%;border:1px solid #2A2A2A;display:inline-flex;align-items:center;justify-content:center;color:#F5F5F5}
+.arr:hover{background:#1A1A1A}
+.qa{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border:1px solid #2A2A2A;border-radius:8px;background:#000000}
+.qa:focus-within{border-color:#8C8C8C}
+.qa input{all:unset;flex:1;font-family:'Figtree',sans-serif;font-size:16px;font-weight:500;color:#F5F5F5}
+.qa input::placeholder{color:#6B6B6B}
+.kbd{font-size:11px;color:#9A9A9A;border:1px solid #2A2A2A;border-radius:4px;padding:1px 6px}
+.row{display:flex;align-items:center;gap:12px;min-height:48px;padding:0 12px;margin:0 -12px;border-radius:8px;transition:background-color .25s}
+.row:hover{background:#0F0F0F}
+.ck{all:unset;cursor:pointer;width:20px;height:20px;border-radius:50%;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;transition:background-color .2s,border-color .2s}
+.ck:hover{border-color:#F5F5F5 !important}
+.tl{flex:1 1 auto;min-width:0;font-family:'Figtree',sans-serif;font-size:15px;font-weight:600;text-decoration:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tl:hover{text-decoration:underline;text-underline-offset:3px;text-decoration-color:#3A3A3A}
+.meta{font-size:11px;text-transform:uppercase;white-space:nowrap;font-variant-numeric:tabular-nums}
+.tog{all:unset;cursor:pointer;display:inline-flex;align-items:center;gap:8px;height:32px;padding:0 10px;margin-left:-10px;border-radius:6px}
+.tog:hover{background:#141414}
+@media (prefers-reduced-motion: reduce){*{transition:none !important}}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; box-sizing: border-box; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <div style="flex: 1 1 220px; max-width: 220px">
+    <dc-import name="Sidebar" active="todo" ui-font="{{uiFontName}}" hint-size="220px,820px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 560px; min-width: 0">
+  <main style="max-width: 720px; margin: 0 auto; padding: 44px 32px 80px; display: flex; flex-direction: column">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="lab">Today</span>
+        <h1 class="r" style="margin: 0; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF">Monday 9 November</h1>
+      </div>
+      <div style="display: flex; align-items: center; gap: 6px">
+        <button class="arr" aria-label="Previous day"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 2 3.5 5l3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+        <button class="btn" style="height: 32px">Today</button>
+        <button class="arr" aria-label="Next day"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+      </div>
+    </div>
+
+    <div style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px 20px; margin-top: 14px">
+      <span style="font-size: 12px; color: #9A9A9A">Scheduled 3h · During the day 20m · +4 untimed</span>
+      <div style="display: flex; align-items: center; gap: 10px; flex: 1; min-width: 180px; max-width: 260px; margin-left: auto">
+        <div role="progressbar" aria-label="Done today" aria-valuenow="{{pct}}" style="flex: 1; height: 6px; border-radius: 3px; background: #1F1F1F; overflow: hidden"><div style="width: {{pct}}%; height: 100%; border-radius: 3px; background: #FFFFFF; transition: width .35s cubic-bezier(.2,.8,.2,1)"></div></div>
+        <span style="font-size: 12px; color: #BDBDBD; white-space: nowrap">{{doneText}}</span>
+      </div>
+    </div>
+
+    <label class="qa" style="margin-top: 28px">
+      <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1v10M1 6h10" stroke="#6B6B6B" stroke-width="1.5"></path></svg>
+      <span style="position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap">Add a task</span>
+      <input type="text" placeholder="Add a task" value="{{draft}}" onChange="{{onDraft}}" onKeyDown="{{onKey}}">
+      <span class="kbd">Enter</span>
+    </label>
+
+    <sc-for list="{{sections}}" as="sec" hint-placeholder-count="4">
+      <section style="display: flex; flex-direction: column; margin-top: 30px">
+        <div style="display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; border-bottom: 1px solid #141414; margin-bottom: 4px">
+          <span class="lab" style="color: {{sec.col}}">{{sec.name}}</span>
+          <span style="font-size: 11px; color: #6B6B6B">{{sec.note}}</span>
+        </div>
+        <sc-for list="{{sec.rows}}" as="t" hint-placeholder-count="2">
+          <div class="row">
+            <button class="ck" aria-label="{{t.label}}" onClick="{{t.tick}}" style="{{t.ckSt}}"></button>
+            <span class="dm" aria-hidden="true" style="width: 28px; font-size: 18px; line-height: 18px; color: {{t.glyphCol}}">{{t.g}}</span>
+            <a class="tl" href="TodoOpen.dc.html" style="color: {{t.fg}}">{{t.title}}</a>
+            <sc-if value="{{t.isCount}}" hint-placeholder-val="{{false}}">
+              <span aria-hidden="true" style="display: flex; gap: 3px">
+                <sc-for list="{{t.copies}}" as="k" hint-placeholder-count="4"><span style="width: 8px; height: 8px; border-radius: 2px; box-sizing: border-box; {{k.st}}"></span></sc-for>
+              </span>
+            </sc-if>
+            <span class="meta" style="color: {{t.metaCol}}">{{t.metaText}}</span>
+          </div>
+        </sc-for>
+      </section>
+    </sc-for>
+
+    <sc-if value="{{hasDone}}" hint-placeholder-val="{{true}}">
+      <section style="display: flex; flex-direction: column; margin-top: 30px">
+        <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid #141414; margin-bottom: 4px">
+          <button class="tog" aria-expanded="{{showDoneStr}}" onClick="{{doneToggle}}">
+            <span class="lab">Done</span><span style="font-size: 11px; color: #6B6B6B">{{doneCount}}</span>
+            <svg width="9" height="9" viewBox="0 0 10 10" aria-hidden="true" style="transform: rotate({{doneRot}}deg); transition: transform .2s"><path d="M3.5 2l3 3-3 3" stroke="#9A9A9A" stroke-width="1.4" fill="none"></path></svg>
+          </button>
+          <span style="font-size: 11px; color: #6B6B6B">{{doneArrow}}</span>
+        </div>
+        <sc-if value="{{showDone}}" hint-placeholder-val="{{true}}">
+          <sc-for list="{{done}}" as="t" hint-placeholder-count="1">
+            <div class="row" style="background: #0A0A0A; margin-top: 2px">
+              <button class="ck" aria-label="{{t.label}}" onClick="{{t.tick}}" style="{{t.ckSt}}"><svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true"><path d="M2 5.2 4.2 7.4 8.2 2.8" stroke="#000000" stroke-width="1.7" fill="none" stroke-linecap="round"></path></svg></button>
+              <span class="dm" aria-hidden="true" style="width: 28px; font-size: 18px; line-height: 18px; color: {{t.glyphCol}}">{{t.g}}</span>
+              <a class="tl" href="TodoOpen.dc.html" style="color: #9A9A9A">{{t.title}}</a>
+              <span class="meta" style="color: #6B6B6B">{{t.metaText}}</span>
+            </div>
+          </sc-for>
+        </sc-if>
+      </section>
+    </sc-if>
+
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":1000}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var NAMES = { missed: 'Missed', scheduled: 'Scheduled', day: 'During the day', anytime: 'Anytime' };
+var NOTES = { missed: 'still tickable', scheduled: '3h', day: '20m + 4 untimed', anytime: 'no date' };
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      draft: '', showDone: true, n: 0,
+      tasks: [
+        { id: 'a', title: 'Reply to email', meta: 'Fri 6 Nov', sec: 'missed', g: 'Re', tone: '#B9A6F0' },
+        { id: 'b', title: 'Morning exercise', meta: '08:00 · due 09:00', doneAt: 'done 08:52', sec: 'scheduled', done: true, g: 'Mo', tone: '#A8CC8C' },
+        { id: 'c', title: 'Calculus (Mon)', meta: '09:00–11:00', sec: 'scheduled', g: 'Ca', tone: '#B5B5B5' },
+        { id: 'd', title: 'Gym', meta: '18:00–19:00', sec: 'scheduled', g: 'Gy', tone: '#A8CC8C' },
+        { id: 'e', title: 'Vitamins', meta: 'by 12:00', sec: 'day', g: 'Vi', tone: '#E6CF8F' },
+        { id: 'f', title: 'Water', count: 2, sec: 'day', g: 'Wa', tone: '#E59AC2' },
+        { id: 'g', title: 'Shower', meta: '20m', sec: 'day', g: 'Sh', tone: '#E6CF8F' },
+        { id: 'h', title: 'Call mom', meta: 'by Sun', sec: 'day', g: 'Ca', tone: '#E59AC2' },
+        { id: 'i', title: 'Buy milk', meta: '', sec: 'anytime', g: 'Bu', tone: '#7EC8C8' }
+      ]
+    };
+  }
+  tick(id) {
+    this.setState(function (s) {
+      return { tasks: s.tasks.map(function (t) {
+        if (t.id !== id) return t;
+        if (t.count != null) {
+          if (t.done) return Object.assign({}, t, { done: false, count: 3 });
+          var c = t.count + 1;
+          return Object.assign({}, t, { count: c, done: c >= 4 });
+        }
+        return Object.assign({}, t, { done: !t.done });
+      }) };
+    });
+  }
+  renderVals() {
+    var self = this, s = this.state;
+    var row = function (t) {
+      var missed = t.sec === 'missed' && !t.done;
+      var copies = [];
+      if (t.count != null) for (var i = 0; i < 4; i++) copies.push({ st: i < t.count ? 'background:' + t.tone : 'border:1px solid #3A3A3A' });
+      return Object.assign({}, t, {
+        isCount: t.count != null && !t.done, copies: copies,
+        metaText: t.count != null ? t.count + '/4' : (t.done && t.doneAt ? t.doneAt : (missed ? 'Missed · ' + t.meta : t.meta)),
+        label: (t.done ? 'Mark not done: ' : 'Mark done: ') + t.title,
+        tick: function () { self.tick(t.id); },
+        ckSt: t.done ? 'background:' + t.tone + ';border:1.5px solid ' + t.tone : missed ? 'border:1.5px solid #3A3A3A;background:#1A1A1A' : 'border:1.5px solid #6B6B6B',
+        glyphCol: missed ? '#3A3A3A' : t.tone,
+        fg: missed ? '#9A9A9A' : '#FFFFFF',
+        metaCol: missed ? '#6B6B6B' : '#BDBDBD'
+      });
+    };
+    var open = s.tasks.filter(function (t) { return !t.done; }).map(row);
+    var done = s.tasks.filter(function (t) { return t.done; }).map(row);
+    var sections = ['missed', 'scheduled', 'day', 'anytime'].map(function (k) {
+      return { name: NAMES[k], note: NOTES[k], col: k === 'missed' ? '#BDBDBD' : '#9A9A9A', rows: open.filter(function (t) { return t.sec === k; }) };
+    }).filter(function (x) { return x.rows.length; });
+    var total = s.tasks.length;
+    return {
+      uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'],
+      uiFontName: this.props.uiFont || 'Pixelify Sans',
+      sections: sections, done: done,
+      hasDone: done.length > 0,
+      doneCount: String(done.length),
+      showDone: s.showDone, showDoneStr: String(s.showDone),
+      doneArrow: s.showDone ? 'Hide' : 'Show',
+      doneRot: s.showDone ? 90 : 0,
+      doneToggle: function () { self.setState({ showDone: !s.showDone }); },
+      pct: Math.round(done.length / total * 100),
+      doneText: done.length + ' of ' + total + ' done',
+      draft: s.draft,
+      onDraft: function (e) { self.setState({ draft: e.target.value }); },
+      onKey: function (e) {
+        if (e.key !== 'Enter') return;
+        var v = s.draft.trim();
+        if (!v) return;
+        self.setState({ draft: '', n: s.n + 1, tasks: s.tasks.concat([{ id: 'n' + s.n, title: v, meta: '', sec: 'anytime', g: v.slice(0, 2), tone: '#B5B5B5' }]) });
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

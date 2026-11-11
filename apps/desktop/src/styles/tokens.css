@@ -1,0 +1,94 @@
+/*
+ * Planner design tokens. Dark only, there is no light theme.
+ * Tailwind CSS v4: import this after "tailwindcss" in your main CSS.
+ *   @import "tailwindcss";
+ *   @import "./tokens.css";
+ * Every token becomes a utility, e.g. bg-ink-fill, text-fg-label, rounded-tile, font-ui.
+ */
+
+@theme {
+  /* ---------- Surfaces & lines ---------- */
+  --color-ink-bg: #000000;          /* page, always pure black */
+  --color-ink-raised: #0A0A0A;      /* selected / done row, side panel */
+  --color-ink-well: #111111;        /* segmented-control track, info boxes */
+  --color-ink-fill: #1A1A1A;        /* quiet button, choice card, chip */
+  --color-ink-fill-hover: #262626;  /* hover on fills */
+  --color-ink-line: #2A2A2A;        /* input + tile borders */
+  --color-ink-line-soft: #1A1A1A;   /* section dividers, sidebar edge */
+  --color-ink-line-faint: #141414;  /* row hairlines */
+  --color-ink-line-dash: #3A3A3A;   /* dashed: drop zone, empty state; disabled fill */
+
+  /* ---------- Text ---------- */
+  --color-fg-white: #FFFFFF;        /* headings, primary button bg, selected */
+  --color-fg: #F5F5F5;              /* body */
+  --color-fg-secondary: #BDBDBD;    /* field labels, meta on dark */
+  --color-fg-label: #9A9A9A;        /* section labels, help text */
+  --color-fg-placeholder: #6B6B6B;  /* placeholders, faint meta only */
+  --color-fg-on-tone: #0D0D0D;      /* text on a filled tile */
+
+  /* ---------- Signal ---------- */
+  --color-danger: #FF4D4D;          /* delete text */
+  --color-danger-fill: #3A1111;     /* delete button bg */
+  --color-error: #FF3B3B;           /* field error text */
+
+  /* ---------- Tile tones: the only color in the app ---------- */
+  /* Each routine / tag picks one. */
+  --color-tone-moss: #A8CC8C;
+  --color-tone-sea: #7EC8C8;
+  --color-tone-rose: #E59AC2;
+  --color-tone-sky: #8EC8F8;
+  --color-tone-sage: #B7DFA0;
+  --color-tone-stone: #B5B5B5;
+  --color-tone-sand: #E6CF8F;
+  --color-tone-lilac: #B9A6F0;
+  /* Extra presets (approved, not in the original design), same pastel lightness. */
+  --color-tone-peach: #F4B48E;
+  --color-tone-coral: #F09C9C;
+  --color-tone-butter: #EDE08C;
+  --color-tone-mint: #96DCC0;
+  --color-tone-periwinkle: #A6B6F6;
+  --color-tone-orchid: #D8A4E8;
+  --color-tone-lime: #CBE39A;
+  --color-tone-slate: #A4B6C4;
+
+  /* ---------- Type ---------- */
+  /* UI: labels, buttons, meta, numbers. Stand-in for the pixel font in the
+     reference screenshots (looked like Departure Mono); swap freely. */
+  /* Departure Mono (declared in index.css), the font the reference screenshots used.
+     Replaced Pixelify Sans, whose 5/S, 0/O, 2/Z, G/B, C/O were indistinguishable. */
+  --font-ui: "Departure Mono", ui-monospace, monospace;
+  /* Reading: anything the user typed (task titles, notes, steps), headings. */
+  --font-read: "Figtree Variable", "Figtree", system-ui, sans-serif;
+  /* Glyph: dot-matrix, square dots. Two-letter task glyphs, codes. */
+  --font-glyph: "Doto Variable", "Doto", ui-monospace, monospace;
+
+  /* ---------- Radius ---------- */
+  --radius-step: 3px;    /* numbered step badge */
+  --radius-chip: 4px;    /* chips, mini squares */
+  --radius-btn: 6px;     /* buttons, inputs, segments */
+  --radius-card: 8px;    /* choice cards, rows, calendar blocks, large button */
+  --radius-drop: 10px;   /* drop zone, big segmented */
+  --radius-tile: 12px;   /* tiles, empty state, stat card */
+
+  /* ---------- Motion ---------- */
+  --ease-snap: cubic-bezier(.2, .8, .2, 1);
+}
+
+/* Things Tailwind utilities can't express cleanly */
+@layer base {
+  html { color-scheme: dark; background: var(--color-ink-bg); color: var(--color-fg); }
+  body { font-family: var(--font-ui); font-size: 13px; }
+}
+
+@layer components {
+  /* Dot-matrix glyph: always square dots */
+  .glyph { font-family: var(--font-glyph); font-variation-settings: "ROND" 0; font-weight: 900; }
+  /* Section label: "SCHEDULED", "ENTRIES" */
+  .label-caps { font-family: var(--font-ui); font-size: 11px; line-height: 14px; letter-spacing: .08em; text-transform: uppercase; color: var(--color-fg-label); }
+  /* Focus ring for every interactive element */
+  .focus-ring:focus-visible { outline: 2px solid var(--color-fg-white); outline-offset: 2px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

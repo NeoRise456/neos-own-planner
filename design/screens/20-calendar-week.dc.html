@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Calendar — week</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Doto:ROND,wght@0..100,100..900&amp;family=Figtree:wght@400;500;600;700;800&amp;family=Pixelify+Sans:wght@400..700&amp;family=Geist+Mono:wght@400;500;600&amp;family=Space+Mono:wght@400;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#000}
+a{color:#F5F5F5}a:hover{color:#FFFFFF}
+button{font-family:inherit}
+.r{font-family:'Figtree',system-ui,sans-serif}
+.dm{font-family:'Doto',monospace;font-variation-settings:'ROND' 0;font-weight:900}
+.lab{font-size:11px;line-height:14px;letter-spacing:.08em;text-transform:uppercase;color:#9A9A9A}
+.btn{all:unset;box-sizing:border-box;height:32px;padding:0 14px;border-radius:6px;font-size:13px;font-weight:600;display:inline-flex;align-items:center;gap:8px;cursor:pointer;white-space:nowrap;background:#1A1A1A;color:#F5F5F5}
+.btn:hover{background:#262626}
+.btn:focus-visible,.arr:focus-visible,.tab:focus-visible,.blk:focus-visible{outline:2px solid #FFFFFF;outline-offset:2px}
+.arr{all:unset;cursor:pointer;width:32px;height:32px;border-radius:50%;border:1px solid #2A2A2A;display:inline-flex;align-items:center;justify-content:center;color:#F5F5F5}
+.arr:hover{background:#1A1A1A}
+.tab{all:unset;cursor:pointer;font-size:13px;color:#8C8C8C;padding:6px 0;border-bottom:2px solid transparent}
+.tab:hover{color:#E5E5E5}
+.tab.on{color:#FFFFFF;font-weight:600;border-bottom-color:#FFFFFF}
+.col{position:relative;height:672px;border-left:1px solid #141414;background:repeating-linear-gradient(to bottom,#161616 0 1px,transparent 1px 48px)}
+.blk{all:unset;cursor:pointer;position:absolute;left:4px;right:4px;box-sizing:border-box;border-radius:8px;padding:5px 8px;overflow:hidden;display:flex;flex-direction:column;gap:2px;transition:background-color .2s,border-color .2s}
+.blk:hover{filter:brightness(1.15)}
+.mini{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 100%; min-height: 1000px; box-sizing: border-box; background: #000000; color: #F5F5F5; font-family: {{uiFont}}; font-size: 13px; display: flex; flex-wrap: wrap; align-items: stretch">
+
+  <div style="flex: 1 1 220px; max-width: 220px">
+    <dc-import name="Sidebar" active="calendar" ui-font="{{uiFontName}}" hint-size="220px,820px"></dc-import>
+  </div>
+
+  <div style="flex: 999 1 560px; min-width: 0">
+  <main style="max-width: 1200px; margin: 0 auto; padding: 40px 32px 64px">
+
+    <div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 16px">
+      <div style="display: flex; flex-direction: column; gap: 8px">
+        <span class="lab">Calendar</span>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+          <h1 class="r" style="margin: 0; font-size: 34px; line-height: 38px; font-weight: 800; letter-spacing: -0.02em; color: #FFFFFF">9 – 15 November</h1>
+          <div style="display: flex; align-items: center; gap: 6px">
+            <button class="arr" aria-label="Previous week"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M6.5 2 3.5 5l3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+            <button class="btn">Today</button>
+            <button class="arr" aria-label="Next week"><svg width="11" height="11" viewBox="0 0 10 10" aria-hidden="true"><path d="M3.5 2l3 3-3 3" stroke="currentColor" stroke-width="1.4" fill="none"></path></svg></button>
+          </div>
+        </div>
+      </div>
+      <div role="tablist" style="display: flex; gap: 20px">
+        <sc-for list="{{tabs}}" as="t" hint-placeholder-count="2"><button class="{{t.cls}}" role="tab" aria-selected="{{t.on}}" onClick="{{t.pick}}">{{t.label}}</button></sc-for>
+      </div>
+    </div>
+
+    <div style="margin-top: 28px; overflow-x: auto">
+      <div style="min-width: 840px">
+
+        <div style="display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); padding-bottom: 10px; border-bottom: 1px solid #1A1A1A">
+          <span></span>
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+            <div style="display: flex; align-items: center; gap: 8px; padding: 0 8px">
+              <span style="font-size: 11px; text-transform: uppercase; color: {{d.wkCol}}">{{d.wk}}</span>
+              <span style="{{d.numSt}}">{{d.n}}</span>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); border-bottom: 1px solid #1A1A1A">
+          <span style="font-size: 10px; line-height: 12px; color: #6B6B6B; text-transform: uppercase; padding: 10px 0">All<br>day</span>
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+            <div style="padding: 8px 4px; display: flex; flex-direction: column; gap: 6px; border-left: 1px solid #141414">
+              <span style="padding: 0 4px; font-size: 11px; color: #9A9A9A">4 during the day</span>
+              <sc-if value="{{d.deadline}}" hint-placeholder-val="{{false}}">
+                <div style="display: flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px; border-radius: 6px; border: 1px solid #FFFFFF">
+                  <svg width="9" height="11" viewBox="0 0 10 12" aria-hidden="true"><path d="M1.5 11V1.5h7l-1.5 2.5 1.5 2.5h-7" stroke="#FFFFFF" stroke-width="1.3" fill="none"></path></svg>
+                  <span class="r" style="font-size: 12px; font-weight: 700; color: #FFFFFF; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">Finish essay</span>
+                  <span style="font-size: 10px; color: #BDBDBD; margin-left: auto">23:59</span>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 56px repeat(7, minmax(0, 1fr)); padding-top: 6px">
+          <div style="position: relative; height: 672px">
+            <sc-for list="{{hours}}" as="h" hint-placeholder-count="14"><span style="position: absolute; top: {{h.top}}px; left: 0; font-size: 10px; color: #6B6B6B; font-variant-numeric: tabular-nums">{{h.label}}</span></sc-for>
+            <span style="position: absolute; top: 152px; left: 0; font-size: 10px; color: #000000; background: #FFFFFF; border-radius: 3px; padding: 1px 4px">10:20</span>
+          </div>
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="7">
+            <div class="col">
+              <sc-for list="{{d.blocks}}" as="b" hint-placeholder-count="2">
+                <button class="blk" aria-label="{{b.aria}}" aria-pressed="{{b.sel}}" onClick="{{b.pick}}" style="{{b.st}}">
+                  <span style="display: flex; align-items: center; gap: 6px; min-width: 0; width: 100%">
+                    <span class="dm" aria-hidden="true" style="font-size: 12px; line-height: 13px; color: {{b.glyphCol}}">{{b.g}}</span>
+                    <span class="r" style="flex: 1; min-width: 0; font-size: 12px; font-weight: 700; line-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; color: {{b.fg}}">{{b.title}}</span>
+                    <span aria-hidden="true" style="width: 13px; height: 13px; border-radius: 50%; box-sizing: border-box; flex-shrink: 0; display: flex; align-items: center; justify-content: center; {{b.ckSt}}"><sc-if value="{{b.done}}" hint-placeholder-val="{{false}}"><svg width="8" height="8" viewBox="0 0 10 10"><path d="M2 5.2 4.2 7.4 8.2 2.8" stroke="{{b.ckCol}}" stroke-width="2" fill="none" stroke-linecap="round"></path></svg></sc-if></span>
+                  </span>
+                  <sc-if value="{{b.tall}}" hint-placeholder-val="{{true}}">
+                    <span style="font-size: 10px; text-transform: uppercase; color: {{b.sub}}; white-space: nowrap">{{b.time}}</span>
+                  </sc-if>
+                </button>
+              </sc-for>
+              <sc-if value="{{d.today}}" hint-placeholder-val="{{false}}">
+                <div aria-label="Now" style="position: absolute; left: -1px; right: 0; top: 160px; height: 2px; background: #FFFFFF; z-index: 3"><span style="position: absolute; left: -4px; top: -3px; width: 8px; height: 8px; border-radius: 50%; background: #FFFFFF"></span></div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+
+      </div>
+    </div>
+  </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"uiFont":{"editor":"enum","options":["Pixelify Sans","Geist Mono","Space Mono"],"default":"Pixelify Sans","section":"Type"},"$preview":{"width":1280,"height":1000}}'>
+var FONTS = { 'Pixelify Sans': "'Pixelify Sans', ui-monospace, monospace", 'Geist Mono': "'Geist Mono', ui-monospace, monospace", 'Space Mono': "'Space Mono', ui-monospace, monospace" };
+var MOSS = '#A8CC8C', STONE = '#B5B5B5', SKY = '#8EC8F8', SEA = '#7EC8C8';
+function pad(h) { return (h < 10 ? '0' : '') + h + ':00'; }
+var EV = [
+  { id: 'm0', day: 0, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS, done: true },
+  { id: 'c0', day: 0, s: 9, e: 11, title: 'Calculus (Mon)', g: 'Ca', tone: STONE },
+  { id: 'g0', day: 0, s: 18, e: 19, title: 'Gym', g: 'Gy', tone: MOSS },
+  { id: 'm1', day: 1, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS },
+  { id: 'p1', day: 1, s: 11, e: 13, title: 'Physics (Tue)', g: 'Ph', tone: SKY },
+  { id: 'm2', day: 2, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS },
+  { id: 'g2', day: 2, s: 18, e: 19, title: 'Gym', g: 'Gy', tone: MOSS },
+  { id: 'm3', day: 3, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS },
+  { id: 'd3', day: 3, s: 15, e: 16, title: 'Dentist', g: 'De', tone: SEA },
+  { id: 'c3', day: 3, s: 16, e: 18, title: 'Calculus (Thu)', g: 'Ca', tone: STONE },
+  { id: 'm4', day: 4, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS },
+  { id: 'g4', day: 4, s: 18, e: 19, title: 'Gym', g: 'Gy', tone: MOSS },
+  { id: 'm5', day: 5, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS },
+  { id: 'm6', day: 6, s: 8, e: 8.5, title: 'Morning exercise', g: 'Mo', tone: MOSS }
+];
+function tint(hex, a) { var n = parseInt(hex.slice(1), 16); return 'rgba(' + (n >> 16) + ',' + ((n >> 8) & 255) + ',' + (n & 255) + ',' + a + ')'; }
+function hm(x) { var h = Math.floor(x), m = Math.round((x - h) * 60); return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m; }
+class Component extends DCLogic {
+  constructor(p) { super(p); this.state = { sel: 'd3', tab: 'Week' }; }
+  renderVals() {
+    var self = this, s = this.state;
+    var names = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    var days = names.map(function (wk, i) {
+      var today = i === 0;
+      return {
+        wk: wk, n: String(9 + i), today: today, deadline: i === 4,
+        wkCol: today ? '#FFFFFF' : '#9A9A9A',
+        numSt: today ? 'font-size:12px;font-weight:700;background:#FFFFFF;color:#000000;border-radius:5px;padding:1px 6px' : 'font-size:12px;color:#BDBDBD',
+        blocks: EV.filter(function (e) { return e.day === i; }).map(function (e) {
+          var sel = s.sel === e.id, h = (e.e - e.s) * 48 - 1, top = (e.s - 7) * 48 + 1;
+          var bg = sel ? 'background:#FFFFFF;border:1px solid #FFFFFF' : e.done ? 'background:' + e.tone + ';border:1px solid ' + e.tone : 'background:' + tint(e.tone, 0.2) + ';border:1px solid ' + tint(e.tone, 0.55);
+          return {
+            title: e.title, g: e.g, done: !!e.done,
+            ckSt: e.done ? 'background:#0D0D0D' : 'border:1.5px solid ' + (sel ? 'rgba(0,0,0,0.45)' : tint(e.tone, 0.7)),
+            ckCol: sel ? '#FFFFFF' : e.tone,
+            time: hm(e.s) + '–' + hm(e.e) + (e.done ? ' · done' : ''),
+            tall: h >= 40, sel: String(sel),
+            aria: e.title + ', ' + names[i] + ' ' + hm(e.s) + '–' + hm(e.e) + (e.done ? ', done' : ''),
+            st: 'top:' + top + 'px;height:' + h + 'px;' + bg + (h < 40 ? ';padding:4px 8px;justify-content:center' : ''),
+            glyphCol: sel || e.done ? '#111111' : e.tone,
+            fg: sel || e.done ? '#0D0D0D' : '#FFFFFF',
+            sub: sel || e.done ? 'rgba(0,0,0,0.6)' : '#BDBDBD',
+            pick: function () { self.setState({ sel: sel ? null : e.id }); }
+          };
+        })
+      };
+    });
+    var hours = [];
+    for (var h = 7; h <= 20; h++) hours.push({ top: (h - 7) * 48 + 3, label: pad(h) });
+    return {
+      uiFont: FONTS[this.props.uiFont] || FONTS['Pixelify Sans'],
+      uiFontName: this.props.uiFont || 'Pixelify Sans',
+      tabs: ['Week', 'Month'].map(function (t) { return { label: t, on: String(s.tab === t), cls: 'tab' + (s.tab === t ? ' on' : ''), pick: function () { self.setState({ tab: t }); } }; }),
+      days: days, hours: hours
+    };
+  }
+}
+</script>
+</body>
+</html>
