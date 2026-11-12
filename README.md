@@ -62,7 +62,7 @@ A setting that moves "now": the calendar's now line, which day is today, and whe
 - **Calendar**: week and month. Timed tasks show as blocks, with a "now" line and deadlines marked.
 - **Routines**: purpose, period, entries and consistency.
 - **Protocols**: the steps, and where each protocol is used.
-- **Settings**: the time zone.
+- **Settings**: the time zone, list defaults, and your tags (rename, recolor, merge, delete).
 
 ## Run it locally
 
@@ -101,11 +101,11 @@ Commands are named `<task>:<app>`, one pair per platform. When web and mobile ex
 
 | Screen | Try |
 |---|---|
-| **Todo** (real) | quick-add (Enter; on a later day it lands on that day) · tick / untick · click a title → task panel: Done/Undo, Move, Edit (notes, tags, start, due, duration), Cancel (Undo in the toast) · on a done task: **Done → Change** its time · Edit → Delete (Undo in the toast) · tag chips → only that tag's tasks · move a task to yesterday → it shows in **Missed** → tick it → *Done now / on time / Pick a time* · ‹ Today › or click the date to jump to any day · restart the app: everything is still there |
+| **Todo** (real) | quick-add (Enter; on a later day it lands on that day) · tick / untick · click a title → task panel: Done/Undo, Move, Edit (notes, tags, start, due, duration), Cancel (Undo in the toast) · on a done task: **Done → Change** its time · Edit → Delete (Undo in the toast) · tag chips → only that tag's tasks · in the panel or Edit, type in **Tags**: it searches your tags (↑ ↓ + Enter), or ends with *Create “…”* · move a task to yesterday → it shows in **Missed** → tick it → *Done now / on time / Pick a time* · ‹ Today › or click the date to jump to any day · restart the app: everything is still there |
 | **Calendar** (mock) | ‹ Today › weeks · click blocks to select · now line · Week / Month (click a day in Month → its week) |
 | **Routines** (mock) | pick routines in the sidebar · open the draft "Reading habit" → **Publish** · then *Back to draft* or *Delete* (only while nothing is done) · on a running routine: **End today**, Change end date, Duplicate (→ a new draft) · add, edit or remove an entry · New routine (starts as a draft) |
 | **Protocols** (mock) | sidebar groups active / unused / past · add a step (Enter) · hover a step → remove (Undo in the toast) · New protocol · Delete (only unused ones) · in an entry's dialog, search protocols (past ones too) and pick one → it becomes active |
-| **Settings** | time zone (moves the sidebar clock and the calendar now line) · list defaults · link to the component sheet |
+| **Settings** | time zone (moves the sidebar clock and the calendar now line) · list defaults · **Tags**: rename, recolor, merge (rename to an existing name), delete (Undo), add · link to the component sheet |
 | **/components** | every base component, clickable |
 
 Tasks and tags are saved in a SQLite file: `%APPDATA%\com.neo.planner\planner-dev.db` while developing, `planner.db` in the installed app (separate, so testing never touches your real tasks). Nothing leaves your computer. The mock screens reset when you restart.

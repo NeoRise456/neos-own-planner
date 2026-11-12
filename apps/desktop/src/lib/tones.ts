@@ -51,3 +51,7 @@ export function luminance(hex: string) {
   });
   return 0.2126 * ch[0] + 0.7152 * ch[1] + 0.0722 * ch[2];
 }
+
+/** New tags get the next color in turn; stone stays the "no tag" color. */
+const TAG_TONES = TONE_NAMES.filter((t) => t !== "stone");
+export const nextTagTone = (existing: number): ToneName => TAG_TONES[existing % TAG_TONES.length]!;

@@ -12,7 +12,7 @@ export * from "./errors";
 export * from "./schema";
 export { taskFromRow, tagFromRow } from "./rows";
 export type { DeleteOutcome, RepoDeps, TaskRepository } from "./tasks";
-export type { TagRepository } from "./tags";
+export type { RemovedTag, TagRef, TagRepository, TagUse } from "./tags";
 
 export interface Repositories {
   tasks: ReturnType<typeof taskRepository>;

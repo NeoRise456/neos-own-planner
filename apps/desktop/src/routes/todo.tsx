@@ -54,7 +54,9 @@ function TodoPage() {
   const { repos, unavailable } = useData();
   const clock = useClock();
   const tags = useTagMap();
-  const { todoDayOffset, openTaskId, showDone, showCancelled, todoTagFilter, set } = useUi();
+  const { todoDayOffset, openTaskId, showDone, showCancelled, todoTagFilter: chosenTag, set } = useUi();
+  // A filter on a tag that was deleted or merged away since is no filter.
+  const todoTagFilter = chosenTag && tags.has(chosenTag) ? chosenTag : null;
   const [draft, setDraft] = useState("");
   const [jumpOpen, setJumpOpen] = useState(false);
   const quickAdd = useRef<HTMLInputElement>(null);

@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/bits";
 import { Select } from "@/components/ui/field";
 import { Toggle } from "@/components/ui/toggle";
 import { ChevronRightIcon } from "@/components/ui/icons";
+import { TagManager } from "@/components/app/tag-manager";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
@@ -58,7 +59,19 @@ function SettingsPage() {
           </div>
         </Section>
 
-        <Section id="testing" title="For testing" description="Everything you see is mock data kept in memory. Restarting the app resets it.">
+        <Section
+          id="tags"
+          title="Tags"
+          description="Rename a tag and every task with it follows. Give it a name another tag has and you can merge the two. Deleting a tag takes it off its tasks; the tasks stay."
+        >
+          <TagManager />
+        </Section>
+
+        <Section
+          id="testing"
+          title="For testing"
+          description="Calendar, Routines and Protocols are still mock data kept in memory; restarting the app resets them. Tasks and tags are saved."
+        >
           <Link
             to="/components"
             className="flex h-12 items-center justify-between rounded-card bg-ink-fill px-[14px] font-ui text-[13px] text-fg no-underline transition-colors duration-[120ms] hover:bg-ink-fill-hover"

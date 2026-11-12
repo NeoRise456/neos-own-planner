@@ -14,6 +14,10 @@ import {
   createProtocol,
   editStep,
   findTag,
+  mergeTagInto,
+  searchTags,
+  withTagAt,
+  withoutTag,
   moveStep,
   removeStep,
   setOffset,
@@ -148,6 +152,40 @@ describe("tags", () => {
     const made = tagForName(tags, " home  chores ", { id: "t2", color: "lime" });
     expect(made.ok && made.value).toEqual({ tag: { id: "t2", name: "home chores", color: "lime" }, created: true });
     expect(tagForName(tags, "  ", { id: "t3", color: "lime" }).ok).toBe(false);
+  });
+
+  describe("searching (the tag box)", () => {
+    const all = ["gymnastics", "Gym", "Uni", "Biology", "programming"].map((name, i) => ({ id: `t${i}`, name, color: "sky" }));
+    const names = (text: string) => searchTags(all, text).matches.map((t) => t.name);
+
+    it("exact first, then starts-with, then contains", () => {
+      expect(names("gym")).toEqual(["Gym", "gymnastics"]);
+      expect(names("og")).toEqual(["Biology", "programming"]);
+      expect(names("")).toEqual(["Biology", "Gym", "gymnastics", "programming", "Uni"]);
+    });
+
+    it("offers to create the typed name unless a tag has exactly that name", () => {
+      expect(searchTags(all, " GYM ").create).toBeNull();
+      expect(searchTags(all, "gy").create).toBe("gy");
+      expect(searchTags(all, "  home   chores ").create).toBe("home chores");
+      expect(searchTags(all, "  ").create).toBeNull();
+    });
+  });
+
+  describe("deleting and merging keep the order (the first tag is the task's color)", () => {
+    it("delete, then undo puts it back in its place", () => {
+      const left = withoutTag(["a", "b", "c"], "b");
+      expect(left).toEqual(["a", "c"]);
+      expect(withTagAt(left, "b", 1)).toEqual(["a", "b", "c"]);
+      expect(withTagAt(["a"], "b", 5)).toEqual(["a", "b"]);
+      expect(withTagAt(["b", "a"], "b", 1)).toEqual(["b", "a"]);
+    });
+
+    it("merge takes the old tag's place and never doubles", () => {
+      expect(mergeTagInto(["x", "uni", "y"], "uni", "university")).toEqual(["x", "university", "y"]);
+      expect(mergeTagInto(["uni", "university"], "uni", "university")).toEqual(["university"]);
+      expect(mergeTagInto(["a"], "uni", "university")).toEqual(["a"]);
+    });
   });
 });
 

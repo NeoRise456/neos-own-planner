@@ -278,6 +278,15 @@ Never the browser's native pickers: they ignore the system (light rounded popups
 - **Time field:** 24-hour, always. A real text box: type "1830", "18:30", "6pm" or "9"; Enter or leaving the field reads it, and text that can't be read stays, with a red border, until it's fixed. ↑ / ↓ move it by 5 minutes. Focusing it opens two scrolling columns (HOUR 00–23, MIN in 5-minute steps, 32px keys) that open centered on the current value, with the same white key for the chosen one; footer "Clear" and "Now".
 - Popovers sit above dialogs, so both work inside forms.
 
+### Tag box
+How a task gets tags (edit dialog and task panel). Code: `components/app/tag-box.tsx`.
+- **Look:** the chosen tags as chips above a plain input (36px, UI 13). A tag that is only typed so far (made when the task is saved) has a small grey "new" after its name.
+- **The list:** typing (or focusing) opens a `#111` popover as wide as the input, 32px rows: a 8px tone square + the name. Order: the exact name, then names that start with the text, then names that contain it. Tags already on the task aren't listed. When no tag has exactly the typed name, the last row is **+ Create “name”** with a grey "new tag" on the right. The highlighted row is `#262626`; a hairline footer says "↑ ↓ to choose · Enter to add".
+- **Keys:** the first row starts highlighted, so Enter takes it; ↑ / ↓ move (and wrap); a comma works like Enter; Backspace in an empty box removes the last chip; Escape closes the list. Leaving the box with text in it adds that exact name, never a partial match.
+
+### Settings → Tags
+Each tag is a row: a 32px color swatch (opens the tone picker), the name as an input that only shows its border on hover/focus (Enter or leaving saves, Escape puts it back), "N tasks" in label grey, and a muted trash button. A name another tag has turns the field red and offers **Merge into “X”** (with a confirm) or **Keep**. Deleting asks first (danger confirm saying how many tasks lose the tag), then gives a toast with Undo.
+
 ### Navigation
 - **Sidebar:** 36px items with icons; the active item is a white pill with black text; counts on the right. Routines and Protocols open a sub-list with a left rail, tone squares, an "Ended" heading and "+ New …".
 - **Sidebar clock:** time in Doto 34px white, date (12px caps) and UTC offset below; the whole block links to Settings.
@@ -315,7 +324,7 @@ Sonner-style stack at bottom right (356px): older toasts tuck behind the front o
 - **Don't** use the browser's native date, time or datetime inputs; use `DateField` / `TimeField`.
 
 ### Approved changes from the handoff (`design/DESIGN.md`)
-Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar · own date & time fields instead of the native pickers (Monday-first calendar, 24-hour typed or picked times).
+Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar · own date & time fields instead of the native pickers (Monday-first calendar, 24-hour typed or picked times) · a searchable tag box instead of the browser's suggestion list.
 
 ### Deliberate system choices (not defects)
 These are part of the design and audits must not flag them: the monospace (pixel) UI font; small uppercase tracked section labels; numbered protocol steps (`01…`); 1px hairline row dividers and input/tile borders.

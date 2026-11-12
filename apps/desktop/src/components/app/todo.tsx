@@ -19,6 +19,7 @@ import { Check, Glyph, GlyphTile } from "@/components/ui/task-visuals";
 import { toast } from "@/components/ui/toast";
 import { EditTaskDialog, MoveTaskDialog } from "./task-dialogs";
 import { SidePanel } from "./side-panel";
+import { TagBox, toTagRefs } from "./tag-box";
 
 /** Tick / untick / uncancel from the check box — the same everywhere a task shows. */
 function useTaskActions(task: Task) {
@@ -168,6 +169,7 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
   const [edit, setEdit] = useState(false);
   const [move, setMove] = useState(false);
   const state = visualState(task, clock);
+  const repos = useRepos();
   const taskTags = task.tags.map((id) => tags.get(id)).filter((t): t is Tag => t !== undefined);
 
   return (
@@ -231,15 +233,18 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
 
           {state === "done" && task.doneAt && <DoneAt key={task.doneAt} task={task} />}
 
-          {taskTags.length > 0 && (
-            <PanelSection label="Tags">
-              <div className="flex flex-wrap gap-1.5 pt-2.5">
-                {taskTags.map((t) => (
-                  <TagChip key={t.id} tag={t} />
-                ))}
-              </div>
-            </PanelSection>
-          )}
+          <PanelSection label="Tags">
+            <div className="pt-2.5">
+              <TagBox
+                aria-label="Tags"
+                placeholder={taskTags.length ? "Add another tag" : "Add a tag"}
+                value={taskTags}
+                known={[...tags.values()]}
+                // Saved at once; a new name becomes a tag in the same write.
+                onChange={(next) => void act(repos.tasks.edit(task.id, {}, toTagRefs(next)))}
+              />
+            </div>
+          </PanelSection>
 
           {task.notes && (
             <PanelSection label="Notes">
@@ -339,11 +344,13 @@ function LateDoneButton({ task }: { task: Task }) {
   );
 }
 
-export function TagChip({ tag, onRemove }: { tag: Pick<Tag, "name" | "color">; onRemove?: () => void }) {
+/** A tag as a chip. `isNew`: only typed so far, made when the task is saved. */
+export function TagChip({ tag, isNew, onRemove }: { tag: Pick<Tag, "name" | "color">; isNew?: boolean; onRemove?: () => void }) {
   return (
     <Chip size="md" className="gap-1.5 normal-case">
       <span aria-hidden className="size-2 rounded-[2px]" style={{ background: toneHex(tag.color as Parameters<typeof toneHex>[0]) }} />
       {tag.name}
+      {isNew && <span className="text-[10px] text-fg-label">new</span>}
       {onRemove && (
         <button type="button" aria-label={`Remove tag ${tag.name}`} onClick={onRemove} className="-mr-1 ml-0.5 text-fg-label hover:text-fg-white">
           <CloseIcon size={8} />

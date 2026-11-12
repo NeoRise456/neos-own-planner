@@ -3,7 +3,7 @@
  * (`editTask`) before saving, so its messages show under the right field; the
  * repository checks again when it writes.
  */
-import { useEffect, useId, useState, type KeyboardEvent } from "react";
+import { useEffect, useState } from "react";
 import { format, parseISO } from "date-fns";
 import {
   type Issue,
@@ -11,9 +11,7 @@ import {
   type Task,
   type TaskFields,
   editTask,
-  findTag,
   formatDuration,
-  normalizeTagName,
   parseDuration,
   scheduleForMove,
   todayOf,
@@ -22,7 +20,6 @@ import {
 import { useRepos } from "@planner/data/react";
 import { currentClock } from "@/lib/clock";
 import { act, useTagMap } from "@/lib/data-hooks";
-import { TONE_NAMES } from "@/lib/tones";
 import { useUi } from "@/stores/ui";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogActions, DialogContent } from "@/components/ui/dialog";
@@ -31,15 +28,9 @@ import { DateField } from "@/components/ui/date-picker";
 import { TimeField } from "@/components/ui/time-picker";
 import { TrashIcon } from "@/components/ui/icons";
 import { toast } from "@/components/ui/toast";
-import { TagChip } from "./todo";
+import { type FormTag, TagBox, toTagRefs } from "./tag-box";
 
 type OpenProps = { open: boolean; onOpenChange: (o: boolean) => void };
-
-/** New tags get the next color in turn (stone stays the "no tag" color). */
-const TAG_TONES = TONE_NAMES.filter((t) => t !== "stone");
-
-/** A tag in the form: an existing one (id) or a name to create on save. */
-type FormTag = { id?: string; name: string; color: string };
 
 /** Issues → the first message for each form field. */
 function byField(issues: Issue[]): Record<string, string> {
@@ -104,13 +95,8 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
       setErrors(byField(preview.errors));
       return;
     }
-    const ids: string[] = [];
-    for (const t of tags) {
-      const tag = t.id ? t : await act(repos.tags.ensure(t.name, t.color));
-      if (!tag?.id) return;
-      ids.push(tag.id);
-    }
-    const saved = await act(repos.tasks.edit(task.id, { ...c, tags: ids }));
+    // New tag names are created in the same write as the task: all or nothing.
+    const saved = await act(repos.tasks.edit(task.id, c, toTagRefs(tags)));
     if (!saved) return;
     p.onOpenChange(false);
     const w = validateTask(saved).warnings[0];
@@ -129,8 +115,6 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
     }
   }
 
-  const nextColor = TAG_TONES[(tagMap.size + tags.filter((t) => !t.id).length) % TAG_TONES.length];
-
   return (
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
       <DialogContent title="Edit task" width={520}>
@@ -145,8 +129,8 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
             {(a) => <Input {...a} kind="title" value={title} onChange={(e) => setTitle(e.target.value)} />}
           </Field>
           <Field label="Notes">{(a) => <Textarea {...a} value={notes} onChange={(e) => setNotes(e.target.value)} />}</Field>
-          <Field label="Tags" help="Type a name and press Enter. New names make a new tag.">
-            {(a) => <TagInput {...a} value={tags} onChange={setTags} known={[...tagMap.values()]} nextColor={nextColor} />}
+          <Field label="Tags" help="Type to search your tags. Enter adds the highlighted one; a new name is created when you save.">
+            {(a) => <TagBox {...a} value={tags} onChange={setTags} known={[...tagMap.values()]} />}
           </Field>
           <div className="grid grid-cols-2 gap-3">
             <Field label="Start day" error={errors.startDate}>
@@ -183,62 +167,6 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
         </form>
       </DialogContent>
     </Dialog>
-  );
-}
-
-/** Chips + a text box. Enter (or a comma) adds the typed name; existing names are suggested. */
-function TagInput({
-  value,
-  onChange,
-  known,
-  nextColor,
-  ...a
-}: {
-  value: FormTag[];
-  onChange: (tags: FormTag[]) => void;
-  known: Tag[];
-  nextColor: string;
-  id: string;
-  "aria-describedby"?: string;
-}) {
-  const [text, setText] = useState("");
-  const listId = useId();
-
-  function add() {
-    const name = normalizeTagName(text);
-    setText("");
-    if (!name || findTag(value.map((t) => ({ id: t.id ?? "", name: t.name, color: t.color })), name)) return;
-    const existing = findTag(known, name);
-    onChange([...value, existing ?? { name, color: nextColor }]);
-  }
-
-  function onKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === "Enter" || e.key === ",") {
-      e.preventDefault();
-      add();
-    } else if (e.key === "Backspace" && text === "" && value.length) {
-      onChange(value.slice(0, -1));
-    }
-  }
-
-  return (
-    <div className="flex flex-col gap-2">
-      {value.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          {value.map((t) => (
-            <TagChip key={t.id ?? `new:${t.name}`} tag={t} onRemove={() => onChange(value.filter((x) => x !== t))} />
-          ))}
-        </div>
-      )}
-      <Input {...a} list={listId} placeholder="Add a tag" value={text} onChange={(e) => setText(e.target.value)} onKeyDown={onKeyDown} onBlur={add} />
-      <datalist id={listId}>
-        {known
-          .filter((k) => !value.some((t) => t.id === k.id))
-          .map((k) => (
-            <option key={k.id} value={k.name} />
-          ))}
-      </datalist>
-    </div>
   );
 }
 

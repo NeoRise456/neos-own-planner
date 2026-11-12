@@ -287,7 +287,7 @@ Tag >──────────────────────< Task, R
 | **1. Core rules** ✅ | Everything in TASK.md / SYSTEMS.md as tested TS logic | Tests cover every rule and example |
 | **1b. Storage spike** ✅ | PowerSync in Tauri: the plugin vs the web SDK in WebView2 | A row survives restart and an app update; choice written in section 6 → **the plugin** |
 | **2. Data layer + one-off tasks** ✅ | `packages/data`: schema, repositories, local-only PowerSync; create/edit/delete/tick/cancel/move one-off tasks; tags; quick-add | Tasks survive restarting the app |
-| **3. Todo view** ✅ | Sections, ticking with done_at options, day navigation (‹ › and a calendar on the date), history (past days; editable done time), tag filter — the routine filter comes with phase 5 | Usable as your daily todo |
+| **3. Todo view** ✅ | Sections, ticking with done_at options, day navigation (‹ › and a calendar on the date), history (past days; editable done time), tag filter (no routine filter: routine copies carry the routine's tags, so the tag filter covers them) · tags managed in Settings, searchable tag box | Usable as your daily todo |
 | **4. Calendar view** | Month/week, blocks, during-the-day strip, now line, deadlines, click-to-create | Usable for planning a week |
 | **5. Routines & protocols** | Routines, entries, routine tasks in views, touch-to-save, from-today changes, duplicate, consistency; protocols | Your uni & exercise routines live in the app |
 | **6. Desktop extras** | Tray, global quick-add shortcut, window-state, desktop-access features | Feels like a real desktop app |

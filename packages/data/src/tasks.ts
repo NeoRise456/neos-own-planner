@@ -28,6 +28,7 @@ import type { Db, LiveQuery, SqlRunner } from "./db";
 import { DataError } from "./errors";
 import { changedColumns, taskColumns, taskFromRow } from "./rows";
 import { deleteRow, insertRow, updateRow } from "./sql";
+import { type TagRef, resolveTags } from "./tags";
 
 export interface RepoDeps {
   /** "Now" for the rules — from the time zone setting. */
@@ -54,16 +55,16 @@ async function load(tx: SqlRunner, id: string): Promise<Task> {
 }
 
 export function taskRepository(db: Db, deps: RepoDeps) {
-  /** Load → rule → save the changed columns, in one transaction. */
-  function change(id: string, rule: (task: Task) => Result<Task>): Promise<Task> {
-    return db.writeTransaction(async (tx) => {
-      const before = await load(tx, id);
-      const after = unwrap(rule(before));
-      const changed = changedColumns(taskColumns(before), taskColumns(after));
-      if (Object.keys(changed).length > 0) await updateRow(tx, "tasks", id, { ...changed, updated_at: deps.nowUtc() });
-      return after;
-    });
+  /** Load → rule → save the changed columns. */
+  async function changeIn(tx: SqlRunner, id: string, rule: (task: Task) => Result<Task>): Promise<Task> {
+    const before = await load(tx, id);
+    const after = unwrap(rule(before));
+    const changed = changedColumns(taskColumns(before), taskColumns(after));
+    if (Object.keys(changed).length > 0) await updateRow(tx, "tasks", id, { ...changed, updated_at: deps.nowUtc() });
+    return after;
   }
+
+  const change = (id: string, rule: (task: Task) => Result<Task>) => db.writeTransaction((tx) => changeIn(tx, id, rule));
 
   async function insert(task: Task, createdAt?: string | null): Promise<Task> {
     const now = deps.nowUtc();
@@ -85,7 +86,15 @@ export function taskRepository(db: Db, deps: RepoDeps) {
       return db.getOptional("SELECT * FROM tasks WHERE id = ?", [id]).then((row) => (row ? taskFromRow(row) : null));
     },
 
-    edit: (id: string, changes: Partial<TaskFields>) => change(id, (t) => editTask(t, changes)),
+    /**
+     * `tags` (optional) replaces the task's tags; names in it become new tags. All in one
+     * transaction: if the task is refused, no tag is created either.
+     */
+    edit: (id: string, changes: Partial<TaskFields>, tags?: TagRef[]) =>
+      db.writeTransaction(async (tx) => {
+        const all = tags ? { ...changes, tags: await resolveTags(tx, deps, tags) } : changes;
+        return changeIn(tx, id, (t) => editTask(t, all));
+      }),
     move: (id: string, schedule: TaskSchedule) => change(id, (t) => moveTask(t, schedule)),
     tick: (id: string, doneAt?: Moment) => change(id, (t) => tickTask(t, deps.clock(), doneAt)),
     setDoneAt: (id: string, doneAt: Moment) => change(id, (t) => setDoneAt(t, doneAt)),

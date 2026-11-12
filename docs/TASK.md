@@ -219,5 +219,13 @@ Details these docs didn't settle, as `packages/core` implements them:
 - **Tag filter:** one chip per tag on the day; picking one shows only tasks with that tag, in every section, and the day total follows. A task quick-added while the filter is on gets that tag, so it doesn't vanish from view.
 - **History = past days.** Click the date to jump to any day. A done task's panel shows when it was done (editable) and, when different, when it was ticked.
 
+## Decided while building tags
+
+- **Tags are their own records** (id, name, color); a task keeps a list of tag ids. Renaming or recoloring a tag changes it on every task.
+- **The tag box searches as you type:** exact name first, then names that start with the text, then names that contain it. The first match is highlighted, so Enter takes it; ↑ / ↓ pick another. When no tag has exactly that name, the list ends with "Create “name”".
+- **A new tag is made when the task is saved**, in the same write: if the task is refused, no tag is created. Cancelling the dialog makes nothing. In the task panel there's no Save button, so a pick (or a new name) is saved at once.
+- **Settings → Tags** lists every tag with how many tasks have it (open or closed). Rename in place; a name another tag already has offers to **merge** the two (every task gets the other tag, in the same place in its list, never twice; can't be undone, so it asks first). **Deleting a tag** asks first ("It comes off the 3 tasks that have it; the tasks themselves stay"), then takes it off every task; the tasks stay. The toast still offers Undo, which puts the same tag back on the same tasks in the same place (the first tag decides a task's color).
+- **No filter by routine.** A routine's tags are copied onto every task it makes, so the tag filter covers routines.
+
 ## Not part of a task (for now)
 Priority, subtasks, reminders, time windows for floating tasks, crossing midnight.
