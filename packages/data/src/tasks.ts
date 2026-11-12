@@ -15,6 +15,7 @@ import {
   createTask,
   deleteTask,
   editTask,
+  isRoutineCopy,
   moveTask,
   quickAddFields,
   setDoneAt,
@@ -38,6 +39,13 @@ export interface RepoDeps {
   nowUtc: () => string;
 }
 
+/**
+ * Which task an action is for: its id, or the task itself. A routine task that was never
+ * touched isn't in the database yet ("Saved or not", SYSTEMS.md): pass the task, and the
+ * first action saves it (touch-to-save).
+ */
+export type TaskRef = string | Task;
+
 /** `createdAt` lets `restore` put a deleted task back in its old place in the lists. */
 export type DeleteOutcome = { action: "deleted"; task: Task; createdAt: string | null } | { action: "cancelled"; task: Task };
 
@@ -48,23 +56,27 @@ function unwrap<T>(result: Result<T>): T {
   return result.value;
 }
 
-async function load(tx: SqlRunner, id: string): Promise<Task> {
-  const row = await tx.getOptional("SELECT * FROM tasks WHERE id = ?", [id]);
-  if (!row) throw DataError.notFound("task", id);
-  return taskFromRow(row);
-}
-
 export function taskRepository(db: Db, deps: RepoDeps) {
-  /** Load → rule → save the changed columns. */
-  async function changeIn(tx: SqlRunner, id: string, rule: (task: Task) => Result<Task>): Promise<Task> {
-    const before = await load(tx, id);
+  /** The saved task, or (for a routine task never touched) the fresh one passed in, not saved yet. */
+  async function loadRef(tx: SqlRunner, ref: TaskRef): Promise<{ task: Task; saved: boolean }> {
+    const id = typeof ref === "string" ? ref : ref.id;
+    const row = await tx.getOptional("SELECT * FROM tasks WHERE id = ?", [id]);
+    if (row) return { task: taskFromRow(row), saved: true };
+    if (typeof ref !== "string" && isRoutineCopy(ref)) return { task: ref, saved: false };
+    throw DataError.notFound("task", id);
+  }
+
+  /** Load → rule → save the changed columns (touching a fresh routine task saves all of it). */
+  async function changeIn(tx: SqlRunner, ref: TaskRef, rule: (task: Task) => Result<Task>): Promise<Task> {
+    const { task: before, saved } = await loadRef(tx, ref);
     const after = unwrap(rule(before));
+    if (!saved) return insertIn(tx, after);
     const changed = changedColumns(taskColumns(before), taskColumns(after));
-    if (Object.keys(changed).length > 0) await updateRow(tx, "tasks", id, { ...changed, updated_at: deps.nowUtc() });
+    if (Object.keys(changed).length > 0) await updateRow(tx, "tasks", after.id, { ...changed, updated_at: deps.nowUtc() });
     return after;
   }
 
-  const change = (id: string, rule: (task: Task) => Result<Task>) => db.writeTransaction((tx) => changeIn(tx, id, rule));
+  const change = (ref: TaskRef, rule: (task: Task) => Result<Task>) => db.writeTransaction((tx) => changeIn(tx, ref, rule));
 
   async function insertIn(tx: SqlRunner, task: Task, createdAt?: string | null): Promise<Task> {
     const now = deps.nowUtc();
@@ -101,23 +113,25 @@ export function taskRepository(db: Db, deps: RepoDeps) {
      * `tags` (optional) replaces the task's tags; names in it become new tags. All in one
      * transaction: if the task is refused, no tag is created either.
      */
-    edit: (id: string, changes: Partial<TaskFields>, tags?: TagRef[]) =>
+    edit: (ref: TaskRef, changes: Partial<TaskFields>, tags?: TagRef[]) =>
       db.writeTransaction(async (tx) => {
         const all = tags ? { ...changes, tags: await resolveTags(tx, deps, tags) } : changes;
-        return changeIn(tx, id, (t) => editTask(t, all));
+        return changeIn(tx, ref, (t) => editTask(t, all));
       }),
-    move: (id: string, schedule: TaskSchedule) => change(id, (t) => moveTask(t, schedule)),
-    tick: (id: string, doneAt?: Moment) => change(id, (t) => tickTask(t, deps.clock(), doneAt)),
-    setDoneAt: (id: string, doneAt: Moment) => change(id, (t) => setDoneAt(t, doneAt)),
-    untick: (id: string) => change(id, (t) => untickTask(t)),
-    cancel: (id: string) => change(id, (t) => cancelTask(t, deps.clock())),
-    uncancel: (id: string) => change(id, (t) => uncancelTask(t)),
+    move: (ref: TaskRef, schedule: TaskSchedule) => change(ref, (t) => moveTask(t, schedule)),
+    tick: (ref: TaskRef, doneAt?: Moment) => change(ref, (t) => tickTask(t, deps.clock(), doneAt)),
+    setDoneAt: (ref: TaskRef, doneAt: Moment) => change(ref, (t) => setDoneAt(t, doneAt)),
+    untick: (ref: TaskRef) => change(ref, (t) => untickTask(t)),
+    cancel: (ref: TaskRef) => change(ref, (t) => cancelTask(t, deps.clock())),
+    uncancel: (ref: TaskRef) => change(ref, (t) => uncancelTask(t)),
 
     /** One-offs are removed; a routine copy is cancelled instead (TASK.md "Deleting"). */
-    remove(id: string): Promise<DeleteOutcome> {
+    remove(ref: TaskRef): Promise<DeleteOutcome> {
       return db.writeTransaction(async (tx) => {
-        const task = await load(tx, id);
+        const { task, saved } = await loadRef(tx, ref);
+        const id = task.id;
         const outcome = unwrap(deleteTask(task, deps.clock()));
+        if (outcome.action === "cancel" && !saved) return { action: "cancelled", task: await insertIn(tx, outcome.task) };
         if (outcome.action === "delete") {
           const row = await tx.getOptional<{ created_at: string | null }>("SELECT created_at FROM tasks WHERE id = ?", [id]);
           await deleteRow(tx, "tasks", id);
@@ -146,10 +160,11 @@ export function taskRepository(db: Db, deps: RepoDeps) {
     aroundDay(day: LocalDate): LiveQuery<Task> {
       return {
         sql: `SELECT * FROM tasks
-              WHERE (done_at IS NULL AND cancelled_at IS NULL)
+              WHERE routine_entry_id IS NULL
+                AND ((done_at IS NULL AND cancelled_at IS NULL)
                  OR substr(coalesce(done_at, cancelled_at), 1, 10) = ?
                  OR start_date = ? OR due_date = ?
-                 OR (start_date IS NULL AND due_date IS NOT NULL)
+                 OR (start_date IS NULL AND due_date IS NOT NULL))
               ORDER BY created_at, id`,
         parameters: [day, day, day],
         mapper: taskFromRow,
@@ -164,12 +179,38 @@ export function taskRepository(db: Db, deps: RepoDeps) {
     between(from: LocalDate, to: LocalDate): LiveQuery<Task> {
       return {
         sql: `SELECT * FROM tasks
-              WHERE start_date BETWEEN ? AND ?
+              WHERE routine_entry_id IS NULL
+                AND (start_date BETWEEN ? AND ?
                  OR due_date BETWEEN ? AND ?
                  OR (start_date < ? AND due_date > ?)
-                 OR (start_date IS NULL AND due_date >= ?)
+                 OR (start_date IS NULL AND due_date >= ?))
               ORDER BY created_at, id`,
         parameters: [from, to, from, to, from, to, from],
+        mapper: taskFromRow,
+      };
+    },
+
+    /**
+     * Saved (touched) routine tasks whose own day or current day is in the range: what
+     * @planner/core's `expandRoutineTasks` lays over the fresh ones.
+     */
+    savedCopies(from: LocalDate, to: LocalDate): LiveQuery<Task> {
+      return {
+        sql: `SELECT * FROM tasks
+              WHERE routine_entry_id IS NOT NULL
+                AND (occurrence_date BETWEEN ? AND ? OR start_date BETWEEN ? AND ?)
+              ORDER BY occurrence_date, occurrence_slot, id`,
+        parameters: [from, to, from, to],
+        mapper: taskFromRow,
+      };
+    },
+
+    /** Every saved task of one routine (consistency, the end-date and delete rules). */
+    copiesOfRoutine(routineId: string): LiveQuery<Task> {
+      return {
+        sql: `SELECT tasks.* FROM tasks JOIN routine_entries ON tasks.routine_entry_id = routine_entries.id
+              WHERE routine_entries.routine_id = ? ORDER BY tasks.occurrence_date, tasks.occurrence_slot`,
+        parameters: [routineId],
         mapper: taskFromRow,
       };
     },

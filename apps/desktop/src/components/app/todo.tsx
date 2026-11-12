@@ -1,13 +1,14 @@
 import { useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import { type Tag, type Task, dateTime, momentLocal, splitDateTime, tickOptions, toMoment } from "@planner/core";
 import { useRepos } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { toneHex } from "@/lib/tones";
 import { currentClock, useClock } from "@/lib/clock";
-import { act } from "@/lib/data-hooks";
+import { act, useProtocolMap } from "@/lib/data-hooks";
 import { glyphOf } from "@/lib/glyph";
-import { panelLine, toneOf, visualState, type TaskView } from "@/lib/task-view";
+import { type Palette, panelLine, toneOf, visualState, type TaskView } from "@/lib/task-view";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
 import { Chip, Label, MiniSquare } from "@/components/ui/bits";
@@ -25,13 +26,13 @@ import { TagBox, toTagRefs } from "./tag-box";
 function useTaskActions(task: Task) {
   const repos = useRepos();
   return {
-    tick: (doneAt?: string) => act(repos.tasks.tick(task.id, doneAt)),
-    untick: () => act(repos.tasks.untick(task.id)),
+    tick: (doneAt?: string) => act(repos.tasks.tick(task, doneAt)),
+    untick: () => act(repos.tasks.untick(task)),
     cancel: () =>
-      act(repos.tasks.cancel(task.id), () =>
-        toast(`Cancelled “${task.title}”.`, { action: { label: "Undo", onClick: () => void act(repos.tasks.uncancel(task.id)) } }),
+      act(repos.tasks.cancel(task), () =>
+        toast(`Cancelled “${task.title}”.`, { action: { label: "Undo", onClick: () => void act(repos.tasks.uncancel(task)) } }),
       ),
-    uncancel: () => act(repos.tasks.uncancel(task.id), `“${task.title}” is back.`),
+    uncancel: () => act(repos.tasks.uncancel(task), `“${task.title}” is back.`),
   };
 }
 
@@ -159,10 +160,13 @@ function LateTickOptions({ task, label, onDone }: { task: Task; label: string; o
 /**
  * Task panel — screens/11-todo-task-open. #050505, left edge #1A1A1A.
  * Tile 64 (fills with the tone when done) · title · when · ✕ · actions
- * (Done/Undo, Move, Edit, Cancel) · tags · notes.
- * Routine links and protocol steps come back with routines (phase 5).
+ * (Done/Undo, Move, Edit, Cancel) · its routine (name, purpose) · tags · notes · its
+ * protocol's steps (read-only: a reminder, nothing to tick).
  */
-export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }) {
+export function TaskPanel({ task, palette }: { task: Task; palette: Palette }) {
+  const tags = palette.tags;
+  const routine = task.routineEntryId !== undefined ? palette.routineOf.get(task.routineEntryId) : undefined;
+  const protocol = useProtocolMap().get(task.protocolId ?? "");
   const actions = useTaskActions(task);
   const clock = useClock();
   const close = () => useUi.getState().set({ openTaskId: null });
@@ -182,7 +186,7 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
         <div aria-hidden className="h-9 shrink-0" />
         <div className="flex min-h-0 flex-1 flex-col gap-[26px] overflow-y-auto px-9 pt-10 pb-20">
           <div className="flex items-start gap-4">
-            <GlyphTile glyph={glyphOf(task.title)} tone={toneOf(task, tags)} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
+            <GlyphTile glyph={glyphOf(task.title)} tone={toneOf(task, palette)} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
             <div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-1">
               <h2
                 className={cn(
@@ -233,6 +237,23 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
 
           {state === "done" && task.doneAt && <DoneAt key={task.doneAt} task={task} />}
 
+          {routine && (
+            <PanelSection label="Routine">
+              <Link
+                to="/routines/$routineId"
+                params={{ routineId: routine.id }}
+                className="group mt-2.5 flex flex-col gap-1 rounded-card no-underline"
+              >
+                <span className="flex items-center gap-2">
+                  <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: toneHex(toneOf(task, palette)) }} />
+                  <span className="read text-[15px] font-bold text-fg-white underline-offset-[3px] group-hover:underline">{routine.title}</span>
+                  <ChevronRightIcon size={9} className="text-fg-label" />
+                </span>
+                {routine.purpose && <span className="read pl-4 text-[14px] leading-[19px] text-fg-secondary">{routine.purpose}</span>}
+              </Link>
+            </PanelSection>
+          )}
+
           <PanelSection label="Tags">
             <div className="pt-2.5">
               <TagBox
@@ -241,7 +262,7 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
                 value={taskTags}
                 known={[...tags.values()]}
                 // Saved at once; a new name becomes a tag in the same write.
-                onChange={(next) => void act(repos.tasks.edit(task.id, {}, toTagRefs(next)))}
+                onChange={(next) => void act(repos.tasks.edit(task, {}, toTagRefs(next)))}
               />
             </div>
           </PanelSection>
@@ -249,6 +270,30 @@ export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }
           {task.notes && (
             <PanelSection label="Notes">
               <p className="read m-0 pt-2.5 text-[15px] leading-[21px] whitespace-pre-wrap text-fg">{task.notes}</p>
+            </PanelSection>
+          )}
+
+          {protocol && (
+            <PanelSection
+              label="Protocol"
+              right={
+                <Link to="/protocols/$protocolId" params={{ protocolId: protocol.id }} className="font-ui text-[11px] text-fg-label no-underline hover:text-fg-white">
+                  {protocol.title} ›
+                </Link>
+              }
+            >
+              {protocol.steps.length === 0 ? (
+                <p className="m-0 pt-2.5 font-ui text-[12px] text-fg-label">No steps yet.</p>
+              ) : (
+                <ol className="m-0 list-none p-0 pt-1">
+                  {protocol.steps.map((step, i) => (
+                    <li key={`${i}-${step}`} className="grid grid-cols-[26px_1fr] gap-2 border-b border-ink-line-faint py-2 last:border-b-0">
+                      <span className="pt-[3px] font-ui text-[11px] text-fg-label tabular-nums">{String(i + 1).padStart(2, "0")}</span>
+                      <span className="read text-[14px] leading-[19px] text-fg">{step}</span>
+                    </li>
+                  ))}
+                </ol>
+              )}
             </PanelSection>
           )}
 
@@ -288,7 +333,7 @@ function DoneAt({ task }: { task: Task }) {
           className="flex flex-col gap-2.5 pt-2.5"
           onSubmit={async (e) => {
             e.preventDefault();
-            const saved = await act(repos.tasks.setDoneAt(task.id, toMoment(dateTime(date, time), currentClock().offset)), "Done time changed.");
+            const saved = await act(repos.tasks.setDoneAt(task, toMoment(dateTime(date, time), currentClock().offset)), "Done time changed.");
             if (saved) setEditing(false);
           }}
         >

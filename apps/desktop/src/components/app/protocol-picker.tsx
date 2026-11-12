@@ -1,9 +1,8 @@
 import { useId, useMemo, useState } from "react";
-import { findProtocols, sortByProtocolStatus, type ProtocolStatus } from "@planner/core";
+import { type Protocol, type ProtocolStatus, findProtocols, protocolStatus, sortByProtocolStatus, todayOf } from "@planner/core";
 import { cn } from "@/lib/cn";
-import { toneHex } from "@/lib/tones";
-import { protocolStatusOf, useMock } from "@/mock/store";
-import type { MockProtocol } from "@/mock/data";
+import { useClock } from "@/lib/clock";
+import { useProtocolMap, useRoutineModel } from "@/lib/data-hooks";
 import { Input } from "@/components/ui/field";
 
 const STATUS_LABEL: Record<ProtocolStatus, string> = { active: "Active", unused: "Unused", past: "Past" };
@@ -14,22 +13,25 @@ const STATUS_LABEL: Record<ProtocolStatus, string> = { active: "Active", unused:
  * running routine makes it active again.
  */
 export function ProtocolPicker({ value, onChange }: { value: string; onChange: (id: string) => void }) {
-  const protocols = useMock((s) => s.protocols);
-  const routines = useMock((s) => s.routines);
+  const protocolMap = useProtocolMap();
+  const protocols = useMemo(() => [...protocolMap.values()], [protocolMap]);
+  const { routines, entries } = useRoutineModel();
+  const today = todayOf(useClock());
   const [query, setQuery] = useState("");
   const listId = useId();
+  const statusOf = (id: string) => protocolStatus(id, routines, entries, today);
 
   const rows = useMemo(() => {
-    const withStatus = protocols.map((p) => ({ protocol: p, status: protocolStatusOf(p, routines).status }));
+    const withStatus = protocols.map((p) => ({ protocol: p, status: protocolStatus(p.id, routines, entries, today) }));
     const sorted = sortByProtocolStatus(withStatus);
     if (!query.trim()) return sorted;
     // While searching: findProtocols' order (title matches first, then steps).
     const rank = new Map(findProtocols(protocols, query).map((p, i) => [p.id, i]));
     return sorted.filter((r) => rank.has(r.protocol.id)).sort((a, b) => rank.get(a.protocol.id)! - rank.get(b.protocol.id)!);
-  }, [protocols, routines, query]);
+  }, [protocols, routines, entries, today, query]);
 
-  const selected = protocols.find((p) => p.id === value);
-  const selectedPast = selected && protocolStatusOf(selected, routines).status === "past";
+  const selected = protocolMap.get(value);
+  const selectedPast = selected && statusOf(selected.id) === "past";
 
   return (
     <div className="flex flex-col gap-2">
@@ -71,7 +73,7 @@ function Row({
   selected,
   onPick,
 }: {
-  protocol?: MockProtocol;
+  protocol?: Protocol;
   status?: ProtocolStatus;
   label?: string;
   selected: boolean;
@@ -91,11 +93,7 @@ function Row({
     >
       {protocol ? (
         <>
-          <span
-            aria-hidden
-            className="size-2 shrink-0 rounded-[2px]"
-            style={{ background: past && !selected ? "#3A3A3A" : toneHex(protocol.tone) }}
-          />
+          <span aria-hidden className={cn("size-2 shrink-0 rounded-[2px]", past && !selected ? "bg-ink-line-dash" : "bg-fg-label")} />
           <span className={cn("min-w-0 flex-1 truncate", past && !selected && "text-fg-secondary")}>{protocol.title}</span>
           <span className={cn("shrink-0 text-[11px] tabular-nums", selected ? "text-[#555555]" : "text-fg-label")}>
             {protocol.steps.length} steps · {STATUS_LABEL[status!]}

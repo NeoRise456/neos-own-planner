@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState, type KeyboardEvent } from "react";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { toneHex } from "@/lib/tones";
-import type { ProtocolStatus } from "@planner/core";
-import { protocolStatusOf, useMock } from "@/mock/store";
-import type { MockProtocol } from "@/mock/data";
-import { Chip, Label } from "@/components/ui/bits";
+import { type ProtocolStatus, type Routine, type RoutineEntry, protocolUsage, todayOf } from "@planner/core";
+import { useData, useLive } from "@planner/data/react";
+import { cn } from "@/lib/cn";
+import { useClock } from "@/lib/clock";
+import { act, useProtocolMap, useRoutineModel } from "@/lib/data-hooks";
+import { glyphOf } from "@/lib/glyph";
+import { type Tone, toneHex } from "@/lib/tones";
+import { Chip, Label, Loader } from "@/components/ui/bits";
 import { Button } from "@/components/ui/button";
-import { QuickAdd } from "@/components/ui/field";
+import { QuickAdd, inputBase } from "@/components/ui/field";
 import { CloseIcon, TrashIcon } from "@/components/ui/icons";
 import { GlyphTile } from "@/components/ui/task-visuals";
 import { toast } from "@/components/ui/toast";
@@ -15,26 +18,37 @@ import { ConfirmDialog } from "@/components/app/dialogs";
 export const Route = createFileRoute("/protocols/$protocolId")({ component: ProtocolPage });
 
 /**
- * Protocol — screens/40-protocols. Steps are plain strings; hover a step to remove it.
- * Status active / unused / past comes from the routines (SYSTEMS.md "Protocol status").
+ * Protocol — screens/40-protocols, on real data. Steps are plain strings: click one to
+ * edit it, hover it to remove it (with Undo). Status active / unused / past comes from the
+ * routines (@planner/core `protocolUsage`); only an unused one can be deleted.
  */
 function ProtocolPage() {
   const { protocolId } = Route.useParams();
-  const protocol = useMock((s) => s.protocols.find((p) => p.id === protocolId));
-  const routines = useMock((s) => s.routines);
-  const addStep = useMock((s) => s.addStep);
-  const removeStep = useMock((s) => s.removeStep);
-  const deleteProtocol = useMock((s) => s.deleteProtocol);
-  // Real one-off tasks can't pick a protocol until protocols are real too (phase 5).
-  const oneOffUses = 0;
+  const { repos } = useData();
+  const today = todayOf(useClock());
   const navigate = useNavigate();
+  const protocols = useProtocolMap();
+  const protocol = protocols.get(protocolId);
+  const { routines, entries, isLoading } = useRoutineModel();
+  const { data: oneOffs } = useLive(repos ? repos.protocols.oneOffUses(protocolId) : null);
   const [draft, setDraft] = useState("");
   const [delOpen, setDelOpen] = useState(false);
+  const usage = useMemo(() => protocolUsage(protocolId, routines, entries, today), [protocolId, routines, entries, today]);
+  const routineById = useMemo(() => new Map(routines.map((r) => [r.id, r])), [routines]);
 
-  if (!protocol) return <main className="px-12 pt-11 font-ui text-fg-label">This protocol doesn't exist anymore.</main>;
+  if (!protocol || !repos) {
+    return isLoading ? (
+      <main className="flex flex-1 justify-center pt-24">
+        <Loader label="Loading the protocol" />
+      </main>
+    ) : (
+      <main className="px-12 pt-11 font-ui text-fg-label">This protocol doesn't exist anymore.</main>
+    );
+  }
 
   const half = Math.ceil(protocol.steps.length / 2);
-  const usage = protocolStatusOf(protocol, routines);
+  // Its light: the color of the first running routine that uses it.
+  const lit = usage.active.map((e) => routineById.get(e.routineId)?.color).find(Boolean) as Tone | undefined;
 
   return (
     <main className="min-w-0 flex-1 px-12 pt-11 pb-20">
@@ -46,13 +60,17 @@ function ProtocolPage() {
           <Chip className={STATUS_CHIP[usage.status]}>{usage.status}</Chip>
         </div>
         <div className="mt-2.5 flex items-center gap-[18px]">
-          <GlyphTile glyph={protocol.glyph} tone={protocol.tone} filled={usage.status === "active"} dim={usage.status === "past"} />
-          <div className="flex min-w-0 flex-col gap-2">
-            <h1 className="read m-0 text-[34px] leading-[38px] font-extrabold tracking-[-.02em] text-fg-white">{protocol.title}</h1>
-            {usage.active.length > 0 && <Uses label="Used by" uses={usage.active} />}
-            {usage.drafts.length > 0 && <Uses label="In drafts" uses={usage.drafts} dim />}
-            {usage.past.length > 0 && <Uses label="Used before by" uses={usage.past} dim />}
-            {protocol.used.length === 0 && <span className="font-ui text-[12px] text-fg-label">No routine uses it yet</span>}
+          <GlyphTile glyph={glyphOf(protocol.title)} tone={lit ?? "stone"} filled={usage.status === "active"} dim={usage.status === "past"} />
+          <div className="flex min-w-0 flex-1 flex-col gap-2">
+            <TitleInput key={protocol.title} title={protocol.title} onSave={(t) => void act(repos.protocols.rename(protocol.id, t))} />
+            {usage.active.length > 0 && <Uses label="Used by" uses={usage.active} routines={routineById} />}
+            {usage.drafts.length > 0 && <Uses label="In drafts" uses={usage.drafts} routines={routineById} dim />}
+            {usage.past.length > 0 && <Uses label="Used before by" uses={usage.past} routines={routineById} dim />}
+            {usage.active.length + usage.drafts.length + usage.past.length === 0 && (
+              <span className="font-ui text-[12px] text-fg-label">
+                No routine uses it yet{oneOffs.length ? ` · ${oneOffs.length} one-off ${oneOffs.length === 1 ? "task" : "tasks"}` : ""}
+              </span>
+            )}
           </div>
         </div>
 
@@ -70,14 +88,15 @@ function ProtocolPage() {
               className="group grid min-h-11 grid-cols-[34px_1fr_28px] items-center gap-2.5 rounded-btn border-b border-ink-line-faint px-1 hover:bg-ink-raised"
             >
               <span className="font-ui text-[11px] text-fg-label tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-              <span className="read py-2.5 text-[15px] leading-[21px] text-fg">{s}</span>
+              <StepText text={s} onSave={(t) => void act(repos.protocols.editStep(protocol.id, i, t))} />
               <button
                 type="button"
                 aria-label={`Remove step ${i + 1}`}
-                onClick={() => {
-                  removeStep(protocol.id, i);
-                  toast("Step removed.", { action: { label: "Undo", onClick: () => restoreStep(protocol.id, i, s) } });
-                }}
+                onClick={() =>
+                  void act(repos.protocols.removeStep(protocol.id, i), () =>
+                    toast("Step removed.", { action: { label: "Undo", onClick: () => void act(repos.protocols.addStep(protocol.id, s, i)) } }),
+                  )
+                }
                 className="inline-flex size-7 items-center justify-center rounded-btn text-fg-placeholder opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100 hover:bg-ink-fill hover:text-danger focus-visible:opacity-100"
               >
                 <CloseIcon size={10} />
@@ -86,9 +105,15 @@ function ProtocolPage() {
           ))}
         </ol>
 
-        <QuickAdd className="mt-4 min-[1280px]:max-w-[490px]" placeholder="Add a step" value={draft} onChange={setDraft} onSubmit={(v) => addStep(protocol.id, v)} />
+        <QuickAdd
+          className="mt-4 min-[1280px]:max-w-[490px]"
+          placeholder="Add a step"
+          value={draft}
+          onChange={setDraft}
+          onSubmit={(v) => void act(repos.protocols.addStep(protocol.id, v))}
+        />
         <p className="mt-3 mb-0 font-ui text-[12px] text-fg-label">
-          A protocol is just a reminder. You follow it yourself, and editing it updates every task that uses it.
+          A protocol is just a reminder: you follow it yourself. Click a step to change it; editing updates every task that uses it.
         </p>
 
         {/* Delete — only unused ones (SYSTEMS.md "Deleting a protocol"). */}
@@ -112,11 +137,10 @@ function ProtocolPage() {
         open={delOpen}
         onOpenChange={setDelOpen}
         title={`Delete “${protocol.title}”?`}
-        body={deleteWarning(usage.drafts.length, oneOffUses)}
+        body={deleteWarning(usage.drafts.length, oneOffs.length)}
         confirmLabel="Delete protocol"
-        onConfirm={() => {
-          deleteProtocol(protocol.id);
-          toast("Protocol deleted.");
+        onConfirm={async () => {
+          if (!(await act(repos.protocols.remove(protocol.id), "Protocol deleted."))) return;
           navigate({ to: "/protocols" });
         }}
       />
@@ -130,23 +154,90 @@ const STATUS_CHIP: Record<ProtocolStatus, string> = {
   past: "text-fg-label",
 };
 
+/** The protocol's title, editable in place (Enter or leaving saves, Escape puts it back). */
+function TitleInput({ title, onSave }: { title: string; onSave: (t: string) => void }) {
+  const [value, setValue] = useState(title);
+  useEffect(() => setValue(title), [title]);
+  const save = () => (value.trim() && value.trim() !== title ? onSave(value) : setValue(title));
+  return (
+    <input
+      aria-label="Protocol title"
+      title="Click to rename"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={save}
+      onKeyDown={(e) => blurOn(e, () => setValue(title))}
+      className={cn(inputBase, "read -ml-2.5 h-auto border-transparent bg-transparent py-0.5 text-[34px] leading-[38px] font-extrabold tracking-[-.02em] text-fg-white hover:border-ink-line")}
+    />
+  );
+}
+
+/** A step: plain text until clicked, then an input (Enter saves, Escape cancels). */
+function StepText({ text, onSave }: { text: string; onSave: (t: string) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(text);
+  if (!editing)
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          setValue(text);
+          setEditing(true);
+        }}
+        className="read cursor-text py-2.5 text-left text-[15px] leading-[21px] text-fg"
+      >
+        {text}
+      </button>
+    );
+  return (
+    <input
+      autoFocus
+      aria-label="Step"
+      value={value}
+      onChange={(e) => setValue(e.target.value)}
+      onBlur={() => {
+        setEditing(false);
+        if (value.trim() && value.trim() !== text) onSave(value);
+      }}
+      onKeyDown={(e) =>
+        blurOn(e, () => {
+          setValue(text);
+          setEditing(false);
+        })
+      }
+      className={cn(inputBase, "read my-1.5 h-8 text-[15px]")}
+    />
+  );
+}
+
+function blurOn(e: KeyboardEvent<HTMLInputElement>, cancel: () => void) {
+  if (e.key === "Enter") e.currentTarget.blur();
+  else if (e.key === "Escape") {
+    cancel();
+    e.currentTarget.blur();
+  }
+}
+
 /** One line of "where it's used" chips; each opens its routine. */
-function Uses({ label, uses, dim }: { label: string; uses: MockProtocol["used"]; dim?: boolean }) {
+function Uses({ label, uses, routines, dim }: { label: string; uses: RoutineEntry[]; routines: Map<string, Routine>; dim?: boolean }) {
   return (
     <div className="flex flex-wrap items-center gap-1.5">
       <span className="font-ui text-[12px] text-fg-label">{label}</span>
-      {uses.map((u) => (
-        <Link
-          key={u.entryId}
-          to="/routines/$routineId"
-          params={{ routineId: u.routineId }}
-          className="inline-flex h-7 items-center gap-1.5 rounded-btn bg-ink-fill px-2.5 font-ui text-[12px] text-fg no-underline transition-colors duration-[120ms] hover:bg-ink-fill-hover"
-        >
-          <span aria-hidden className="size-2 rounded-[2px]" style={{ background: dim ? "#3A3A3A" : toneHex(u.tone) }} />
-          {u.label}
-          <span className="text-fg-label">· {u.kind}</span>
-        </Link>
-      ))}
+      {uses.map((e) => {
+        const r = routines.get(e.routineId);
+        return (
+          <Link
+            key={e.id}
+            to="/routines/$routineId"
+            params={{ routineId: e.routineId }}
+            className="inline-flex h-7 items-center gap-1.5 rounded-btn bg-ink-fill px-2.5 font-ui text-[12px] text-fg no-underline transition-colors duration-[120ms] hover:bg-ink-fill-hover"
+          >
+            <span aria-hidden className="size-2 rounded-[2px]" style={{ background: dim ? "#3A3A3A" : toneHex((r?.color ?? "stone") as Tone) }} />
+            {e.versions[e.versions.length - 1]!.title}
+            {r && <span className="text-fg-label">· {r.title}</span>}
+          </Link>
+        );
+      })}
     </div>
   );
 }
@@ -158,11 +249,4 @@ function deleteWarning(drafts: number, oneOffs: number): string {
   ].filter(Boolean);
   if (parts.length === 0) return "Nothing uses it, so nothing else changes.";
   return `No running or past routine uses it. ${parts.join(" and ")} will just lose it.`;
-}
-
-/** Undo for "remove step": put it back where it was (mock only). */
-function restoreStep(protocolId: string, index: number, text: string) {
-  useMock.setState((s) => ({
-    protocols: s.protocols.map((p) => (p.id === protocolId ? { ...p, steps: [...p.steps.slice(0, index), text, ...p.steps.slice(index)] } : p)),
-  }));
 }

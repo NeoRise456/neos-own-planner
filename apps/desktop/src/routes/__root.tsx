@@ -23,7 +23,8 @@ function Root() {
           <div className="flex min-w-0 flex-1 flex-col">
             <div aria-hidden className="h-9 shrink-0" />
             {/* relative: hidden labels (.sr-only) position against this, not the window */}
-            <div className="relative flex min-h-0 min-w-0 flex-1 overflow-y-auto">
+            {/* items-start: a page is as tall as its content, so its bottom padding scrolls into view (a stretched page ends at the window's edge and its padding is lost). */}
+            <div className="relative flex min-h-0 min-w-0 flex-1 items-start overflow-y-auto">
               <Outlet />
             </div>
           </div>

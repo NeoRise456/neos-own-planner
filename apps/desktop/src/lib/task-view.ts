@@ -5,6 +5,12 @@
  */
 import { format, parseISO } from "date-fns";
 import {
+  versionOn,
+  nextCopyToTick,
+  countProgress,
+  movedFrom,
+  type RoutineEntry,
+  type Routine,
   validateTask,
   type LocalDateTime,
   type Clock,
@@ -37,9 +43,18 @@ export function visualState(task: Task, clock: Clock): VisualState {
   return s === "not_done" ? "todo" : s;
 }
 
-/** A one-off's color: its first tag's, else stone. */
-export function toneOf(task: Task, tags: Map<string, Tag>): Tone {
-  const first = task.tags.map((id) => tags.get(id)).find(Boolean);
+/** What a task's color depends on: its tags, and for a routine task its routine (by entry id). */
+export interface Palette {
+  tags: Map<string, Tag>;
+  routineOf: Map<string, Routine>;
+  entries: Map<string, RoutineEntry>;
+}
+
+/** A routine task: its routine's color. A one-off: its first tag's. Else stone. */
+export function toneOf(task: Task, palette: Palette): Tone {
+  const routine = task.routineEntryId !== undefined ? palette.routineOf.get(task.routineEntryId) : undefined;
+  if (routine?.color) return routine.color as Tone;
+  const first = task.tags.map((id) => palette.tags.get(id)).find(Boolean);
   return (first?.color as Tone | undefined) ?? "stone";
 }
 
@@ -93,7 +108,7 @@ export interface TaskView {
   meta: string;
 }
 
-export function viewOf(task: Task, day: LocalDate, clock: Clock, tags: Map<string, Tag>): TaskView {
+export function viewOf(task: Task, day: LocalDate, clock: Clock, palette: Palette): TaskView {
   const state = visualState(task, clock);
   const meta =
     state === "cancelled"
@@ -102,8 +117,14 @@ export function viewOf(task: Task, day: LocalDate, clock: Clock, tags: Map<strin
         ? doneLabel(task.doneAt!, day)
         : state === "missed"
           ? missedLabel(task, clock)
-          : scheduleLabel(task, day);
-  return { task, state, glyph: glyphOf(task.title), tone: toneOf(task, tags), meta };
+          : withMoved(task, scheduleLabel(task, day));
+  return { task, state, glyph: glyphOf(task.title), tone: toneOf(task, palette), meta };
+}
+
+/** A routine task moved off its own day: "… · moved from Mon". */
+function withMoved(task: Task, label: string): string {
+  const from = movedFrom(task);
+  return from ? [label, `moved from ${weekday(from)}`].filter(Boolean).join(" · ") : label;
 }
 
 /** The task panel's line under the title: "Thu 12 Nov · 15:00–16:00 · 1h". */
@@ -123,7 +144,8 @@ export function panelLine(task: Task, clock: Clock): string {
   const status =
     state === "done" ? doneLabel(task.doneAt!, todayOf(clock)) : state === "cancelled" ? "cancelled" : state === "missed" ? "missed" : null;
   const duration = kind !== "timed" && task.duration !== undefined ? formatDuration(task.duration) : null;
-  return [when, duration, status].filter(Boolean).join(" · ");
+  const moved = movedFrom(task);
+  return [when, duration, status, moved && `moved from ${dayShort(moved)}`].filter(Boolean).join(" · ");
 }
 
 /**
@@ -160,4 +182,34 @@ export function formSummary(task: Task): { text: string; warnings: string[] } | 
   const out = runsOutAt(task);
   parts.push(out ? `missed after ${at(out)}` : "never missed");
   return { text: parts.join(" · "), warnings: check.warnings.map((w) => w.message) };
+}
+
+/** The copies of a count entry on one day share this key ("Water ×4"); any other task: null. */
+export function countKeyOf(task: Task, palette: Palette): string | null {
+  const entry = task.routineEntryId !== undefined ? palette.entries.get(task.routineEntryId) : undefined;
+  const v = entry && task.occurrenceDate !== undefined ? versionOn(entry, task.occurrenceDate) : null;
+  return v?.perDay.kind === "count" ? `${task.routineEntryId}/${task.occurrenceDate}` : null;
+}
+
+/**
+ * "Water 2/4": a count entry's copies of one day as one item — the next copy to tick
+ * stands for them, with done / total (cancelled copies don't count). `all` = every task of
+ * the day, so done copies count even when they're listed elsewhere.
+ */
+export function groupCounts(tasks: Task[], all: Task[], palette: Palette): { task: Task; count?: { done: number; of: number } }[] {
+  const seen = new Set<string>();
+  const out: { task: Task; count?: { done: number; of: number } }[] = [];
+  for (const t of tasks) {
+    const key = countKeyOf(t, palette);
+    if (key === null) {
+      out.push({ task: t });
+      continue;
+    }
+    if (seen.has(key)) continue;
+    seen.add(key);
+    const copies = all.filter((x) => countKeyOf(x, palette) === key).sort((a, b) => a.occurrenceSlot! - b.occurrenceSlot!);
+    const { done, total } = countProgress(copies);
+    out.push({ task: nextCopyToTick(copies) ?? t, count: { done, of: total } });
+  }
+  return out;
 }

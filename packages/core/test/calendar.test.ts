@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Task, calendarDay, calendarWeek, hourRange, layoutBlocks, slotAt } from "../src";
+import { type Task, calendarDay, calendarWeek, layoutBlocks, slotAt } from "../src";
 
 const TODAY = "2026-11-11"; // Wed
 const t = (id: string, fields: Partial<Task> = {}): Task => ({ id, title: id, tags: [], ...fields });
@@ -32,6 +32,12 @@ describe("what a calendar day shows", () => {
     expect(ids(calendarDay(tasks, "2026-11-13", TODAY).deadlines)).toEqual(["essay"]);
   });
 
+  it("due the same day it starts → during the day, not a deadline", () => {
+    const vitamins = t("vitamins", { startDate: TODAY, dueDate: TODAY, dueTime: "12:00" });
+    const d = calendarDay([vitamins], TODAY, TODAY);
+    expect([ids(d.deadlines), ids(d.during)]).toEqual([[], ["vitamins"]]);
+  });
+
   it("floating tasks are 'during the day' across their range, but a deadline on their due day", () => {
     expect(ids(calendarDay(tasks, "2026-11-09", TODAY).during)).toEqual(["essay"]);
     expect(ids(calendarDay(tasks, "2026-11-12", TODAY).during)).toEqual(["essay"]);
@@ -61,15 +67,6 @@ describe("overlapping blocks share the width", () => {
   it("touching blocks don't overlap", () => {
     expect(lanes([b("a", 540, 600), b("b", 600, 660)])).toEqual(["a:0/1", "b:0/1"]);
   });
-});
-
-it("the grid shows 07–21, stretched to fit every block", () => {
-  const day = (start: number, end: number) => ({ day: TODAY, deadlines: [], during: [], blocks: [{ task: t("x"), start, end, hasDuration: true, lane: 0, lanes: 1 }] });
-  expect(hourRange([])).toEqual({ from: 7, to: 21 });
-  expect(hourRange([day(390, 420), day(1290, 1350)])).toEqual({ from: 6, to: 23 });
-  expect(hourRange([day(600, 1440)])).toEqual({ from: 7, to: 24 });
-  expect(hourRange([], 23 * 60 + 30)).toEqual({ from: 7, to: 24 });
-  expect(hourRange([], 5 * 60 + 10)).toEqual({ from: 5, to: 21 });
 });
 
 it("a click lands on the half hour above it", () => {

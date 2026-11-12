@@ -42,14 +42,22 @@ export interface Routine {
   lineage: string;
   /** When it was published. Not set = a draft: no tasks yet. */
   publishedAt?: Moment;
+  /** Its color (a tone name or "#RRGGBB"): its tasks, blocks and tiles light up in it. */
+  color?: string;
 }
 
 export type RoutineStatus = "draft" | "upcoming" | "active" | "ended";
 
-/** One fixed copy per day: a start time (→ timed), a due time, or neither (→ floating). */
+/**
+ * One fixed copy per day: a start time (→ timed), a deadline (`dueTime`), or neither
+ * (→ floating). `duration` is this time's own length in minutes — the form shows it as
+ * an end time when there's a start ("18:00 → 19:00"), as a length when there isn't.
+ * Entries saved before times had their own length use the blueprint's `duration`.
+ */
 export interface SlotTime {
   startTime?: LocalTime;
   dueTime?: LocalTime;
+  duration?: number;
 }
 
 /** What each matching day gets: fixed times, or N floating copies. */
@@ -62,6 +70,7 @@ export interface EntryBlueprint {
   title: string;
   notes?: string;
   tags: string[];
+  /** A count's length (each copy). For fixed times, each time has its own; this is the fallback. */
   duration?: number;
   protocolId?: string;
   rule: Rule;
@@ -116,6 +125,7 @@ export interface RoutineFields {
   purpose?: string;
   startDate: LocalDate;
   endDate: LocalDate;
+  color?: string;
 }
 
 /** A new routine: a draft, which can start empty. Its lineage is its own id. */
@@ -128,6 +138,7 @@ export function createRoutine(id: string, fields: RoutineFields): Result<Routine
     startDate: fields.startDate,
     endDate: fields.endDate,
     lineage: id,
+    ...(fields.color ? { color: fields.color } : {}),
   };
   return fromCheck(routine, validateRoutine(routine));
 }
@@ -152,6 +163,7 @@ export function editRoutine(
     ...(changes.title !== undefined ? { title: changes.title.trim() } : {}),
     ...(purpose ? { purpose } : {}),
     ...(changes.startDate !== undefined ? { startDate: changes.startDate } : {}),
+    ...(changes.color ? { color: changes.color } : {}),
   };
   if (changes.endDate !== undefined && changes.endDate !== routine.endDate) {
     return changeEndDate(next, changes.endDate, copies);
@@ -287,6 +299,7 @@ export function duplicateRoutine(
     endDate: options.endDate,
     clonedFrom: routine.id,
     lineage: routine.lineage,
+    ...(routine.color !== undefined ? { color: routine.color } : {}),
   };
   const check = validateRoutine(copy);
   if (check.errors.length) return fail(check.errors);
@@ -336,16 +349,42 @@ export function validateBlueprint(blueprint: EntryBlueprint): Check {
           errors.push(issue("invalid_time", `Time ${i + 1}: ${field} isn't a valid time.`, `times.${i}.${field}`));
         }
       }
+      if (slot.duration !== undefined && !(Number.isInteger(slot.duration) && slot.duration > 0)) {
+        errors.push(issue("duration_positive", `Time ${i + 1}: the length must be a whole number of minutes above 0.`, `times.${i}.duration`));
+      }
       if (
         isLocalTime(slot.startTime) &&
         isLocalTime(slot.dueTime) &&
         timeToMinutes(slot.dueTime) < timeToMinutes(slot.startTime)
       ) {
-        errors.push(issue("due_before_start_time", `Time ${i + 1}: the due time can't be before the start time.`, `times.${i}.dueTime`));
+        errors.push(issue("due_before_start_time", `Time ${i + 1}: the deadline can't be before the start.`, `times.${i}.dueTime`));
       }
     });
   }
-  return { errors, warnings: [] };
+  return { errors, warnings: blueprintWarnings(blueprint) };
+}
+
+/** A time's length: its own, else the entry's (entries saved before times had their own). */
+export function slotDuration(blueprint: EntryBlueprint, slot: SlotTime): number | undefined {
+  return slot.duration ?? blueprint.duration;
+}
+
+/** Same as the task form's: a deadline inside the block means it's missed before the block ends. */
+function blueprintWarnings(b: EntryBlueprint): Issue[] {
+  if (b.perDay.kind !== "times") return [];
+  const out: Issue[] = [];
+  b.perDay.times.forEach((slot, i) => {
+    const length = slotDuration(b, slot);
+    if (!isLocalTime(slot.startTime) || !isLocalTime(slot.dueTime) || length === undefined) return;
+    const start = timeToMinutes(slot.startTime);
+    const due = timeToMinutes(slot.dueTime);
+    const end = Math.min(start + length, 23 * 60 + 59);
+    if (due >= start && due < end) {
+      const hhmm = (m: number) => `${String(Math.floor(m / 60)).padStart(2, "0")}:${String(m % 60).padStart(2, "0")}`;
+      out.push(issue("due_before_end", `Time ${i + 1}: the deadline (${slot.dueTime}) is before it ends (${hhmm(end)}).`, `times.${i}.dueTime`));
+    }
+  });
+  return out;
 }
 
 function normalizeBlueprint(b: EntryBlueprint): EntryBlueprint {
@@ -441,7 +480,8 @@ export function freshCopies(routine: Routine, entry: RoutineEntry, day: LocalDat
       occurrenceSlot: n,
     };
     if (v.notes !== undefined) task.notes = v.notes;
-    if (v.duration !== undefined) task.duration = v.duration;
+    const length = perDay.kind === "times" ? slotDuration(v, slot) : v.duration;
+    if (length !== undefined) task.duration = length;
     if (v.protocolId !== undefined) task.protocolId = v.protocolId;
     if (slot.startTime !== undefined) task.startTime = slot.startTime;
     if (slot.dueTime !== undefined) {

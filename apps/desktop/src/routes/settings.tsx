@@ -1,4 +1,6 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
+import { isTauri } from "@tauri-apps/api/core";
+import { disable, enable, isEnabled } from "@tauri-apps/plugin-autostart";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { formatOffset, useUi } from "@/stores/ui";
 import { useNow } from "@/lib/use-now";
@@ -7,6 +9,7 @@ import { Select } from "@/components/ui/field";
 import { Toggle } from "@/components/ui/toggle";
 import { ChevronRightIcon } from "@/components/ui/icons";
 import { TagManager } from "@/components/app/tag-manager";
+import { cn } from "@/lib/cn";
 
 export const Route = createFileRoute("/settings")({ component: SettingsPage });
 
@@ -19,7 +22,7 @@ const OFFSETS = Array.from({ length: (14 + 12) * 2 + 1 }, (_, i) => -12 * 60 + i
  * Every control saves itself; nothing to submit.
  */
 function SettingsPage() {
-  const { utcOffsetMinutes, showDone, showCancelled, set } = useUi();
+  const { utcOffsetMinutes, showDone, showCancelled, calStartHour, set } = useUi();
   const now = useNow();
   return (
     <main className="min-w-0 flex-1 px-12 pt-11 pb-20">
@@ -52,11 +55,28 @@ function SettingsPage() {
           </div>
         </Section>
 
+        <Section id="calendar" title="Calendar" description="The week shows the whole day, 00:00 to 24:00, and scrolls. This is the hour at the top when you open it.">
+          <label className="flex w-[200px] flex-col gap-2 font-ui text-[12px] text-fg-secondary">
+            Opens at
+            <Select className="w-[200px]" value={calStartHour} onChange={(e) => set({ calStartHour: Number(e.target.value) })}>
+              {Array.from({ length: 24 }, (_, h) => (
+                <option key={h} value={h}>
+                  {`${String(h).padStart(2, "0")}:00`}
+                </option>
+              ))}
+            </Select>
+          </label>
+        </Section>
+
         <Section id="todo" title="Todo lists" description="Whether the Done and Cancelled lists start open when you open a day.">
           <div className="flex flex-col divide-y divide-ink-line">
             <Row label="Done list starts open" hint="Ticked tasks, in the order you did them." checked={showDone} onChange={(v) => set({ showDone: v })} />
             <Row label="Cancelled list starts open" hint="Tasks that won't happen; they still count as history." checked={showCancelled} onChange={(v) => set({ showCancelled: v })} />
           </div>
+        </Section>
+
+        <Section id="startup" title="Startup" description="Open the planner when you sign in to the computer. Off unless you turn it on.">
+          <StartupRow />
         </Section>
 
         <Section
@@ -70,7 +90,7 @@ function SettingsPage() {
         <Section
           id="testing"
           title="For testing"
-          description="Calendar, Routines and Protocols are still mock data kept in memory; restarting the app resets them. Tasks and tags are saved."
+          description="Every component of the app on one page, clickable, for checking the design. It doesn't touch your tasks."
         >
           <Link
             to="/components"
@@ -103,14 +123,62 @@ function Section({ id, title, description, children }: { id: string; title: stri
   );
 }
 
-function Row({ label, hint, checked, onChange }: { label: string; hint: string; checked: boolean; onChange: (v: boolean) => void }) {
+function Row({
+  label,
+  hint,
+  checked,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  hint: ReactNode;
+  checked: boolean;
+  disabled?: boolean;
+  onChange: (v: boolean) => void;
+}) {
   return (
-    <label className="flex cursor-pointer items-center justify-between gap-6 py-3 first:pt-0 last:pb-0">
+    <label className={cn("flex items-center justify-between gap-6 py-3 first:pt-0 last:pb-0", disabled ? "cursor-default" : "cursor-pointer")}>
       <span className="flex flex-col gap-1">
         <span className="font-ui text-[13px] text-fg">{label}</span>
         <span className="font-ui text-[12px] text-fg-label">{hint}</span>
       </span>
-      <Toggle checked={checked} onCheckedChange={onChange} />
+      <Toggle checked={checked} disabled={disabled} onCheckedChange={onChange} />
     </label>
   );
+}
+
+/**
+ * "Open when the computer starts". Windows keeps the on/off (its startup list), so the
+ * switch reads it from there instead of from our settings. Off by default.
+ * A dev build would register itself (an .exe that needs the dev server), so it's locked there.
+ */
+function StartupRow() {
+  const available = isTauri();
+  const dev = import.meta.env.DEV;
+  const [on, setOn] = useState<boolean | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!available) return;
+    isEnabled()
+      .then(setOn)
+      .catch(() => setOn(false));
+  }, [available]);
+
+  async function change(next: boolean) {
+    setError(null);
+    try {
+      await (next ? enable() : disable());
+      setOn(await isEnabled());
+    } catch {
+      setError("Windows didn't accept the change. Try again.");
+    }
+  }
+
+  const hint = !available
+    ? "Only in the desktop app."
+    : dev
+      ? "Only in the installed app: this dev build can't start on its own."
+      : error ?? "Starts with Windows. You can also turn it off in Task Manager → Startup apps.";
+  return <Row label="Open when the computer starts" hint={hint} checked={on ?? false} disabled={!available || dev || on === null} onChange={(v) => void change(v)} />;
 }

@@ -29,9 +29,10 @@ import { Dialog, DialogActions, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { DateField } from "@/components/ui/date-picker";
 import { TimeField } from "@/components/ui/time-picker";
-import { PlusIcon, TrashIcon } from "@/components/ui/icons";
+import { CloseIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
 import { formSummary } from "@/lib/task-view";
 import { toast } from "@/components/ui/toast";
+import { ProtocolPicker } from "./protocol-picker";
 import { type FormTag, TagBox, toTagRefs } from "./tag-box";
 
 type OpenProps = { open: boolean; onOpenChange: (o: boolean) => void };
@@ -74,6 +75,8 @@ function TaskForm({
   const [duration, setDuration] = useState("");
   /** The deadline row shows once asked for (or when the task has one). */
   const [deadlineOpen, setDeadlineOpen] = useState(false);
+  const [protocolId, setProtocolId] = useState("");
+  const [protocolOpen, setProtocolOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
@@ -90,6 +93,8 @@ function TaskForm({
     setEndTime(timed ? endTimeOf(f.startTime!, f.duration!) : "");
     setDuration(!timed && f.duration !== undefined ? formatDuration(f.duration) : "");
     setDeadlineOpen(f.dueDate !== undefined);
+    setProtocolId(f.protocolId ?? "");
+    setProtocolOpen(f.protocolId !== undefined);
     setErrors({});
     // Only when the dialog opens — not when tags change while it's open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -140,6 +145,7 @@ function TaskForm({
       startTime: startTime || undefined,
       dueDate: dueDate || undefined,
       dueTime: dueTime || undefined,
+      protocolId: protocolId || undefined,
     };
   }
 
@@ -173,7 +179,7 @@ function TaskForm({
     }
     // New tag names are created in the same write as the task: all or nothing.
     const saved = await act(
-      task ? repos.tasks.edit(task.id, c, toTagRefs(tags)) : repos.tasks.create({ ...c, title: c.title ?? "", tags: [] }, toTagRefs(tags)),
+      task ? repos.tasks.edit(task, c, toTagRefs(tags)) : repos.tasks.create({ ...c, title: c.title ?? "", tags: [] }, toTagRefs(tags)),
     );
     if (!saved) return;
     p.onOpenChange(false);
@@ -184,7 +190,7 @@ function TaskForm({
 
   async function remove() {
     if (!task) return;
-    const out = await act(repos.tasks.remove(task.id));
+    const out = await act(repos.tasks.remove(task));
     if (!out) return;
     p.onOpenChange(false);
     useUi.getState().set({ openTaskId: null });
@@ -239,22 +245,48 @@ function TaskForm({
             )}
           </div>
           {deadlineOpen ? (
-            <div className="grid grid-cols-2 gap-3 border-t border-ink-line-soft pt-4">
-              <Field label="Deadline" help="The latest it can be done." error={errors.dueDate}>
-                {(a) => <DateField {...a} value={dueDate} onChange={changeDueDate} />}
-              </Field>
-              {dueDate ? (
-                <Field label="Deadline time" help="Optional. Without one: the end of that day." error={errors.dueTime}>
-                  {(a) => <TimeField {...a} value={dueTime} onChange={setDueTime} />}
+            <div className="flex flex-col gap-2 border-t border-ink-line-soft pt-4">
+              <div className="grid grid-cols-2 gap-3">
+                <Field label="Deadline" help="The latest it can be done." error={errors.dueDate}>
+                  {(a) => <DateField {...a} value={dueDate} onChange={changeDueDate} />}
                 </Field>
-              ) : (
-                <span />
-              )}
+                {dueDate ? (
+                  <Field label="Deadline time" help="Optional. Without one: the end of that day." error={errors.dueTime}>
+                    {(a) => <TimeField {...a} value={dueTime} onChange={setDueTime} />}
+                  </Field>
+                ) : (
+                  <span />
+                )}
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="-ml-3 self-start"
+                onClick={() => {
+                  setDeadlineOpen(false);
+                  setDueDate("");
+                  setDueTime("");
+                }}
+              >
+                <CloseIcon size={10} />
+                Remove deadline
+              </Button>
             </div>
           ) : (
             <Button variant="ghost" size="sm" className="-ml-3 self-start" onClick={() => setDeadlineOpen(true)}>
               <PlusIcon />
               Add a deadline
+            </Button>
+          )}
+
+          {protocolOpen ? (
+            <Field label="Protocol" help="Its steps show when you open the task.">
+              {() => <ProtocolPicker value={protocolId} onChange={setProtocolId} />}
+            </Field>
+          ) : (
+            <Button variant="ghost" size="sm" className="-mt-2 -ml-3 self-start" onClick={() => setProtocolOpen(true)}>
+              <PlusIcon />
+              Add a protocol
             </Button>
           )}
 
@@ -318,7 +350,7 @@ export function MoveTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
           className="flex flex-col gap-4"
           onSubmit={async (e) => {
             e.preventDefault();
-            const moved = await act(repos.tasks.move(task.id, scheduleForMove(task, date, time || undefined)));
+            const moved = await act(repos.tasks.move(task, scheduleForMove(task, date, time || undefined)));
             if (!moved) return;
             p.onOpenChange(false);
             toast(`Moved to ${format(parseISO(date), "EEE d MMM")}${time ? ` ${time}` : ""}.`);

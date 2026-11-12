@@ -3,8 +3,8 @@
  * are no client migrations: adding a column = adding it here. Every table also gets an
  * `id` (UUID text) from PowerSync.
  *
- * Only what phase 2 uses so far: tasks and tags. Routines, entries, protocols and
- * settings arrive with their phases.
+ * Tasks and tags (phase 2); routines, their entries and protocols (phase 5). Settings
+ * join later.
  */
 import { Schema, Table, column } from "@powersync/common";
 
@@ -38,6 +38,40 @@ export const TABLES = {
   tags: {
     name: "text",
     color: "text",
+    created_at: "text",
+    updated_at: "text",
+  },
+  routines: {
+    title: "text",
+    purpose: "text",
+    /** A tone name or "#RRGGBB". */
+    color: "text",
+    start_date: "text",
+    end_date: "text",
+    cloned_from: "text",
+    lineage: "text",
+    /** Empty = a draft. */
+    published_at: "text",
+    created_at: "text",
+    updated_at: "text",
+  },
+  routine_entries: {
+    routine_id: "text",
+    /**
+     * JSON array of the entry's versions (blueprint + the day it applies from), oldest
+     * first. One row per entry: a change in a published routine adds a version.
+     */
+    versions: "text",
+    removed_from: "text",
+    /** Order in the routine's list. */
+    position: "integer",
+    created_at: "text",
+    updated_at: "text",
+  },
+  protocols: {
+    title: "text",
+    /** JSON array of step strings, in order. */
+    steps: "text",
     created_at: "text",
     updated_at: "text",
   },

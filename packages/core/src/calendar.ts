@@ -4,7 +4,8 @@
  *
  * - **Blocks**: timed tasks on their start day, from the start time for their duration
  *   (no duration → a short block). Blocks that overlap sit side by side in lanes.
- * - **Deadlines**: a task due that day (unless it's a block on that same day).
+ * - **Deadlines**: a task due that day, unless it starts that same day (then it's a block,
+ *   or "during the day, by 12:00").
  * - **During the day**: floating tasks that show that day, as in Todo, except on
  *   their due day, where they are a deadline instead. A timed task due on a later day
  *   is its block on its start day, then "during the day" until its deadline.
@@ -52,7 +53,9 @@ export function calendarDay(tasks: Task[], day: LocalDate, today: LocalDate): Ca
       const fullEnd = b.end ? start + (task.duration ?? 0) : start + NO_DURATION_MINUTES;
       raw.push({ task, start, end: Math.min(Math.max(fullEnd, start + 1), DAY_MINUTES), hasDuration: b.end !== null });
     }
-    if (task.dueDate === day && !isBlockToday) deadlines.push(task);
+    // A deadline ends something: a due date on its own, or the last day of a span. Due the
+    // same day it starts ("Vitamins, by 12:00") is just "during the day, by 12:00".
+    if (task.dueDate === day && !isBlockToday && task.startDate !== day) deadlines.push(task);
     // Floating — or timed, on the days after its block until the deadline.
     else if (!isBlockToday && showsOn(task, day, today)) during.push(task);
   }
@@ -96,21 +99,6 @@ export function layoutBlocks(blocks: Omit<CalendarBlock, "lane" | "lanes">[]): C
   }
   closeGroup();
   return out;
-}
-
-/**
- * The hours the week grid shows: 07–21, stretched to whole hours so every block fits,
- * and so does `now` (minutes from midnight) when today is on screen.
- */
-export function hourRange(days: CalendarDay[], now?: number): { from: number; to: number } {
-  let first = Math.min(7 * 60, now ?? Infinity);
-  let last = Math.max(21 * 60, now !== undefined ? now + 1 : 0);
-  for (const d of days)
-    for (const b of d.blocks) {
-      first = Math.min(first, b.start);
-      last = Math.max(last, b.end);
-    }
-  return { from: Math.floor(first / 60), to: Math.min(24, Math.ceil(last / 60)) };
 }
 
 /** Where a click in the grid lands: minutes from midnight, rounded down to `step`. */

@@ -211,7 +211,7 @@ Details these docs didn't settle, as `packages/core` implements them:
 - **Durations** are typed as `20m`, `1h`, `1h 30m`, `1.5h` or a plain number of minutes, and shown the same way.
 - **A one-off task's color** is its first tag's color; with no tags it's grey (stone). New tags get the next color in turn.
 - **Deleting a one-off is real, with a short undo.** The task is removed from the database at once; the "Task deleted" toast offers Undo for 6 seconds (the timer pauses while the pointer is over the toasts). Undo puts the exact same task back: same id, fields, tags, done/cancelled state and place in the list. Once the toast is gone (or the app closes), it's gone for good: there is no trash.
-- **The time zone setting isn't saved yet**: it starts from the computer's zone at each launch (settings join the database later).
+- **The time zone setting isn't saved yet**: it starts from the computer's zone at each launch (settings join the database later). The other preferences (calendar "Opens at", Done/Cancelled lists start open) are kept on this computer until then.
 
 ## Decided while building the Todo view (phase 3)
 
@@ -236,9 +236,9 @@ Details these docs didn't settle, as `packages/core` implements them:
 - **One task, no types — in the form too.** Fields show up as they become relevant (a start time once there's a day, an end once there's a time), and a summary line says what the task will do and when it turns missed ("Thu 12 Nov, 07:00–10:00 · missed after 10:00"), with any warning under it.
 - **A deadline inside the block** (start 07:00, end 10:00, deadline 09:30) is allowed, with a warning: "The deadline (09:30) is before the block ends (10:00)." The task is missed from 09:31, even while its block is still running.
 - **A timed task due on a later day** (start Mon 08:30, deadline Fri) is its block on Monday, then "during the day" on Tue–Thu ("since Mon · by Fri"), in Todo and Calendar, until it's done; on Friday it's the deadline (in Todo: during the day). Done on Wednesday → it shows on Wednesday (the block stays on Monday's calendar). Its block counts toward the planned time on Monday only.
-- **Deadlines** are tasks due that day, as a flag chip in the all-day row with the due time. A timed task due the same day it starts is just its block.
+- **Deadlines** are tasks due that day, as a flag chip in the all-day row with the due time: a due date on its own, or the last day of a span. A task due the same day it starts isn't a flag: a timed one is just its block, a floating one is "during the day, by 12:00" (so daily routine tasks like "Vitamins, by 12:00" don't fill the row with flags).
 - **During the day** = floating tasks that show that day, the same days as in Todo (a range shows every day until it's done). On its due day the task shows as the deadline instead, never twice. The all-day row lists 3, then "+N more".
-- **The hours** shown are 07:00–21:00, stretched to fit the week's earliest and latest block, and the current time when today is in view (so the now line never falls off the grid).
+- **The hours**: the week always shows the whole day, 00:00–24:00, and scrolls. It opens with the hour from Settings → Calendar → "Opens at" at the top (07:00 by default).
 - **Click-to-create:** clicking empty space in a day column opens a new task at that half hour, 1 hour long; the "+" in a day's all-day cell makes a task on that day with no time; "New task" in the header starts on today. The form is the full task form. With a tag filter on, the new task starts with that tag.
 - **Clicking a task** opens the same panel as in Todo (tick, move, edit). Month view: clicking a day opens its week.
 - **Tag filter** works like Todo's, with its own selection.

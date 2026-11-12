@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   type Clock,
   type EntryBlueprint,
+  type SlotTime,
   type Routine,
   type RoutineEntry,
   type Task,
@@ -340,6 +341,39 @@ describe("entry validation", () => {
     expect(codes({ perDay: { kind: "count", count: 0 } })).toContain("count_min");
     expect(codes({ perDay: { kind: "times", times: [] } })).toContain("times_required");
     expect(codes({ perDay: { kind: "times", times: [{ startTime: "10:00", dueTime: "09:00" }] } })).toContain("due_before_start_time");
+    expect(codes({ perDay: { kind: "times", times: [{ startTime: "10:00", duration: 0 }] } })).toContain("duration_positive");
+  });
+
+  it("warns when a time's deadline falls inside its block", () => {
+    const warn = (times: SlotTime[], duration?: number) =>
+      validateBlueprint({ ...gymBlueprint, ...(duration ? { duration } : {}), perDay: { kind: "times", times } }).warnings.map((w) => w.message);
+    expect(warn([{ startTime: "07:00", duration: 180, dueTime: "09:30" }])).toEqual(["Time 1: the deadline (09:30) is before it ends (10:00)."]);
+    expect(warn([{ startTime: "07:00", duration: 180, dueTime: "10:00" }])).toEqual([]);
+    // Older entries: the entry's length counts for every time.
+    expect(warn([{ startTime: "07:00", dueTime: "07:30" }], 60)).toHaveLength(1);
+  });
+});
+
+describe("each time has its own length", () => {
+  it("08:00 takes 15m, 18:00 takes 1h", () => {
+    const meds = entry("meds", {
+      title: "Meds",
+      tags: [],
+      rule: { freq: "daily", interval: 1 },
+      perDay: { kind: "times", times: [{ startTime: "08:00", duration: 15 }, { startTime: "18:00", duration: 60 }, {}] },
+    });
+    expect(freshCopies(exercise, meds, "2025-11-05").map((t) => t.duration)).toEqual([15, 60, undefined]);
+  });
+
+  it("an older entry's length applies to every time; a time's own wins", () => {
+    const old = entry("old", {
+      title: "Old",
+      tags: [],
+      duration: 30,
+      rule: { freq: "daily", interval: 1 },
+      perDay: { kind: "times", times: [{ startTime: "08:00" }, { startTime: "18:00", duration: 60 }] },
+    });
+    expect(freshCopies(exercise, old, "2025-11-05").map((t) => t.duration)).toEqual([30, 60]);
   });
 });
 

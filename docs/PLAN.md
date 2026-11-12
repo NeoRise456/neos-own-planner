@@ -100,6 +100,7 @@ Not now: sync switched on, login, reminders & notifications, backup & export.
 | `updated_at` | On every row, UTC, set by the repositories |
 | Deletes | Real deletes. PowerSync uploads them as delete operations, so no "deleted" markers are needed |
 | Owner | No user column on the device. The server stamps `owner_id` from the login token (section 7) |
+| Routine entries | One row per entry, its **versions as a JSON array** (`routine_entries.versions`: blueprint + the day it applies from), plus `removed_from` and `position`. A published change appends a version. Protocol steps are a JSON array too (`protocols.steps`) |
 | Tags on tasks | A JSON array of tag ids in `tasks.tag_ids` (no join table): last write wins on the whole list, which is fine for one person's tags |
 | Errors | Repositories throw one typed `DataError` (`not_found`, `invalid` with the `@planner/core` issues); the UI shows its message in a toast |
 
@@ -242,7 +243,7 @@ Tag >──────────────────────< Task, R
 | **Routine entry** | routine, title, notes, tags, duration, protocol, repetition rule (freq, interval, weekdays / month day / nth weekday / yearly date), times *or* count, the date it applies from |
 | **Protocol** | title, steps (ordered strings) |
 | **Tag** | name, color |
-| **Settings** | time zone (UTC offset) |
+| **Settings** | time zone (UTC offset), calendar "Opens at" hour, Todo lists start open, open when the computer starts (off by default) |
 
 **Worked out, never stored:** task kind, task state, time-runs-out moment, untouched routine tasks, routine status, consistency.
 
@@ -289,7 +290,7 @@ Tag >──────────────────────< Task, R
 | **2. Data layer + one-off tasks** ✅ | `packages/data`: schema, repositories, local-only PowerSync; create/edit/delete/tick/cancel/move one-off tasks; tags; quick-add | Tasks survive restarting the app |
 | **3. Todo view** ✅ | Sections, ticking with done_at options, day navigation (‹ › and a calendar on the date), history (past days; editable done time), tag filter (no routine filter: routine copies carry the routine's tags, so the tag filter covers them) · tags managed in Settings, searchable tag box | Usable as your daily todo |
 | **4. Calendar view** ✅ | Month/week, blocks (side by side when they overlap), during-the-day strip, now line, deadlines, click-to-create, tag filter — one-offs; routine tasks join in phase 5 | Usable for planning a week |
-| **5. Routines & protocols** | Routines, entries, routine tasks in views, touch-to-save, from-today changes, duplicate, consistency; protocols | Your uni & exercise routines live in the app |
+| **5. Routines & protocols** ✅ | Routines (draft → publish, end, back to draft, delete, duplicate, dates), entries (every rule, times or count, versions from today on), routine tasks in Todo and Calendar (touch-to-save, "Water 2/4", moved from…), consistency; protocols (steps, status, delete rules, in entries and one-off tasks, shown in the task panel) | Your uni & exercise routines live in the app |
 | **6. Desktop extras** | Tray, global quick-add shortcut, window-state, desktop-access features | Feels like a real desktop app |
 | **7. Sync & login** | `apps/server` (write API + Better Auth), `infra/` (Postgres + PowerSync Service), sync streams, desktop login | A task ticked on one device shows on another; offline edits upload on reconnect |
 

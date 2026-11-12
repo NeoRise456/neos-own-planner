@@ -279,9 +279,23 @@ Never the browser's native pickers: they ignore the system (light rounded popups
 - Popovers sit above dialogs, so both work inside forms.
 
 ### Task form
-One task, no types: fields show up as they become relevant. Title · Notes · Tags · *Day* → *Start time* (once there's a day) → *End time* (once there's a start time; help "Length 1h 30m"), or *Duration* when there's no start time · a ghost "+ Add a deadline" that opens a hairline-topped row: *Deadline* → *Deadline time* (once there's a deadline day). Clearing a day clears its time.
+One task, no types: fields show up as they become relevant. Title · Notes · Tags · *Day* → *Start time* (once there's a day) → *End time* (once there's a start time; help "Length 1h 30m"), or *Duration* when there's no start time · a ghost "+ Add a deadline" that opens a hairline-topped row: *Deadline* → *Deadline time* (once there's a deadline day), and under it a ghost "✕ Remove deadline" that clears both and closes the row. Clearing a day clears its time.
 - **Summary line** at the bottom, on a `#111` card, UI 12 grey: what the task will do, in plain words, as it's filled in — "Thu 12 Nov, 07:00–10:00 · missed after 10:00", "Mon 16 Nov, 08:30 (no end time) · then during the day until Fri 20 Nov · missed after Fri 20 Nov 23:59", "Anytime: shows today until it's done · never missed". Warnings from the rules show under it in red.
 - The word "due" isn't used in the app: deadlines read "by Fri", "by 09:30".
+
+### Task panel: routine and protocol
+- **Routine** (routine tasks): a tone square, the routine's name (Figtree 15/800, links to it) and its purpose in grey under it.
+- **Protocol**: the section label with the protocol's name on the right (links to it), then its steps as a numbered list (UI 11 grey numbers, Figtree 14 text, hairlines between). Read-only: nothing to tick.
+
+### Routine entry form
+"What" (title field) · **1 How often**: four choice cards (Daily / Weekly / Monthly / Yearly), "Every [N] week(s)", weekday keys (white when on), monthly "On the [N]" or "On the [last] [Fri]" radio rows, yearly "On [14] [March]" · **2 Each day gets**: radio rows *Fixed times* or *A count*.
+- **Fixed times**, same model as the task form: each row is `[Start] → [End] ✕` (✕ only with more than one row). A row with no start ("sometime that day") shows a **Length** box instead of End, and no arrow; the column label reads End, Length or "End / length" to match the rows. Below: "+ Add a time" and "+ Add a deadline"; the deadline adds a third **Deadline** column to every row, and the link turns into "✕ Remove deadline(s)", which clears them all and closes the column (the dialog is 580 wide so three time fields fit). One line of help under them says when it's missed.
+- **A count**: number + "All by", then **Length** ("each").
+- A hairline, then Tags (tag box), Notes, Protocol (picker) · a `#111` well with the preview line "Next: Fri 13 Nov · Mon 16 Nov · Wed 18 Nov" and, in error red, the live warning "Time 2: the deadline (18:30) is before it ends (19:00)."
+- The entry's line on the routine page: "Daily · 08:00–08:15 / 18:00–19:00 by 18:30 / 20m", or "Daily · 4 times · 5m each".
+
+### Color picker
+The custom swatch (after the 16 tones) opens our own picker on the popover card, never the browser's color dialog: a 136px saturation × brightness square (1px `#2A2A2A` border, 6px radius) with a white ring handle, a 12px hue bar with a round handle, then a 36px swatch beside a hex field (UI 13, caps). Nothing applies while dragging; a hairline footer holds a ghost "Cancel" and a white "Use color" (Enter in the hex field also applies). It opens on the current color. Too dark (luminance < 0.3) shows the red readability note. Arrow keys move both handles (Shift = bigger steps). Code: `components/ui/color-picker.tsx`.
 
 ### Tag box
 How a task gets tags (edit dialog and task panel). Code: `components/app/tag-box.tsx`.
@@ -289,16 +303,19 @@ How a task gets tags (edit dialog and task panel). Code: `components/app/tag-box
 - **The list:** typing (or focusing) opens a `#111` popover as wide as the input, 32px rows: a 8px tone square + the name. Order: the exact name, then names that start with the text, then names that contain it. Tags already on the task aren't listed. When no tag has exactly the typed name, the last row is **+ Create “name”** with a grey "new tag" on the right. The highlighted row is `#262626`; a hairline footer says "↑ ↓ to choose · Enter to add".
 - **Keys:** the first row starts highlighted, so Enter takes it; ↑ / ↓ move (and wrap); a comma works like Enter; Backspace in an empty box removes the last chip; Escape closes the list. Leaving the box with text in it adds that exact name, never a partial match.
 
+### Settings → Startup
+One switch row, "Open when the computer starts", **off by default**. Its state comes from Windows (the startup list), not our settings. In a dev build it's locked (50% opacity) with the hint "Only in the installed app: this dev build can't start on its own."
+
 ### Settings → Tags
 Each tag is a row: a 32px color swatch (opens the tone picker), the name as an input that only shows its border on hover/focus (Enter or leaving saves, Escape puts it back), "N tasks" in label grey, and a muted trash button. A name another tag has turns the field red and offers **Merge into “X”** (with a confirm) or **Keep**. Deleting asks first (danger confirm saying how many tasks lose the tag), then gives a toast with Undo.
 
 ### Navigation
 - **Sidebar:** 36px items with icons; the active item is a white pill with black text; counts on the right. Routines and Protocols open a sub-list with a left rail, tone squares, an "Ended" heading and "+ New …".
-- **Sidebar clock:** time in Doto 34px white, date (12px caps) and UTC offset below; the whole block links to Settings.
+- **Sidebar clock:** time in Doto 34px white, date (12px caps) and UTC offset below. Display only: it is not a button (Settings has its own link under it).
 - **Title bar:** transparent, drag area plus 46×36 window buttons with thin 1.2-stroke icons (#9A9A9A → white); close hovers in danger colors; icons never change with the window state.
 
 ### Calendar (week and month)
-48px per hour, 07:00–21:00 stretched to fit the week's blocks and the current time. Code: `routes/calendar.tsx`; what goes where is `@planner/core` `calendarDay`.
+48px per hour, the whole day (00:00–24:00). The hours scroll on their own under a fixed day header and all-day row, and the grid fills the window; it opens scrolled to Settings → Calendar → "Opens at" (07:00 by default). Code: `routes/calendar.tsx`; what goes where is `@planner/core` `calendarDay`.
 - **Block states:** not done = tinted tone, white title · done = solid tone, dark text, "· done" · selected = white · missed = faint tint (`.08`/`.30`), grey glyph and title, "· missed" · cancelled = dashed `#3A3A3A` outline, struck grey title. Labels that don't fit end in "…"; the full text is in the tooltip.
 - **No end time:** a marker, not a block: a 2px line at the start (tone at .8, solid tone when done, grey when missed/cancelled, white when selected) with an 18px `#111` label hanging under it: start time, title, a tone tick when done.
 - **Overlap:** blocks that overlap share the column in equal lanes, 2px apart; side by side, the glyph is left out so the title gets the room.
@@ -338,7 +355,7 @@ Sonner-style stack at bottom right (356px): older toasts tuck behind the front o
 - **Don't** use the browser's native date, time or datetime inputs; use `DateField` / `TimeField`.
 
 ### Approved changes from the handoff (`design/DESIGN.md`)
-Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar · own date & time fields instead of the native pickers (Monday-first calendar, 24-hour typed or picked times) · a searchable tag box instead of the browser's suggestion list.
+Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar · own date & time fields instead of the native pickers (Monday-first calendar, 24-hour typed or picked times) · a searchable tag box instead of the browser's suggestion list · own color picker instead of the system color dialog.
 
 ### Deliberate system choices (not defects)
 These are part of the design and audits must not flag them: the monospace (pixel) UI font; small uppercase tracked section labels; numbered protocol steps (`01…`); 1px hairline row dividers and input/tile borders.

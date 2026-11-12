@@ -1,12 +1,21 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { type DaySummary, type Task, addDays, daySummary, diffDays, filterTodoDay, formatDuration, todayOf } from "@planner/core";
+import {
+  type DaySummary,
+  type Task,
+  addDays,
+  daySummary,
+  diffDays,
+  filterTodoDay,
+  formatDuration,
+  todayOf,
+} from "@planner/core";
 import { useData, useLive } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { useClock } from "@/lib/clock";
-import { act, useTagMap, useTodoDay } from "@/lib/data-hooks";
-import { viewOf } from "@/lib/task-view";
+import { act, usePalette, useTodoDay } from "@/lib/data-hooks";
+import { type Palette, type TaskView, groupCounts, viewOf } from "@/lib/task-view";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
 import { EmptyState, Label, Loader, Progress, SectionHeader } from "@/components/ui/bits";
@@ -53,7 +62,8 @@ function summaryParts(s: DaySummary): string[] {
 function TodoPage() {
   const { repos, unavailable } = useData();
   const clock = useClock();
-  const tags = useTagMap();
+  const palette = usePalette();
+  const tags = palette.tags;
   const { todoDayOffset, openTaskId, showDone, showCancelled, todoTagFilter: chosenTag, set } = useUi();
   // A filter on a tag that was deleted or merged away since is no filter.
   const todoTagFilter = chosenTag && tags.has(chosenTag) ? chosenTag : null;
@@ -63,7 +73,7 @@ function TodoPage() {
 
   const today = todayOf(clock);
   const day = addDays(today, todoDayOffset);
-  const { todo: wholeDay, isLoading } = useTodoDay(day, clock);
+  const { todo: wholeDay, tasks: dayTasks, isLoading } = useTodoDay(day, clock);
   const todo = useMemo(() => filterTodoDay(wholeDay, todoTagFilter), [wholeDay, todoTagFilter]);
   // The chips: the tags on this day's tasks (and the chosen one, so it can be turned off).
   const dayTags = useMemo(
@@ -77,20 +87,21 @@ function TodoPage() {
   );
   const filterName = todoTagFilter ? tags.get(todoTagFilter)?.name : undefined;
   const { data: opened } = useLive(repos && openTaskId ? repos.tasks.byId(openTaskId) : null);
-  const openTask = opened[0];
+  // A routine task never touched isn't saved yet: find it among the day's tasks.
+  const openTask = opened[0] ?? dayTasks.find((t) => t.id === openTaskId);
 
   const dayLabel = todoDayOffset === 0 ? "Today" : todoDayOffset === 1 ? "Tomorrow" : todoDayOffset === -1 ? "Yesterday" : format(parseISO(day), "EEEE");
   const views = useMemo(() => {
-    const v = (ts: Task[]) => ts.map((t) => viewOf(t, day, clock, tags));
+    const v = (ts: Task[]): Row[] => ts.map((t) => ({ view: viewOf(t, day, clock, palette) }));
     return {
       missed: v(todo.missed),
       scheduled: v(todo.scheduled),
-      during: v(todo.during),
+      during: countRows(todo.during, dayTasks, day, clock, palette),
       anytime: v(todo.anytime),
       done: v(todo.done),
       cancelled: v(todo.cancelled),
     };
-  }, [todo, day, clock, tags]);
+  }, [todo, dayTasks, day, clock, palette]);
 
   const openCount = todo.missed.length + todo.scheduled.length + todo.during.length + todo.anytime.length;
   const counted = openCount + todo.done.length;
@@ -210,27 +221,27 @@ function TodoPage() {
             if (!rows.length) return null;
             return (
               <section key={key} className="mt-[30px] flex flex-col">
-                <SectionHeader label={label} note={sectionNote(key, rows.map((r) => r.task))} labelClassName={key === "missed" ? "text-fg-secondary" : undefined} />
-                {rows.map((v) => (
-                  <TaskRow key={v.task.id} view={v} selected={v.task.id === openTaskId} />
+                <SectionHeader label={label} note={sectionNote(key, todo[key])} labelClassName={key === "missed" ? "text-fg-secondary" : undefined} />
+                {rows.map(({ view: v, count }) => (
+                  <TaskRow key={v.task.id} view={v} count={count} selected={v.task.id === openTaskId} />
                 ))}
               </section>
             );
           })}
 
           <Collapsible label="Done" count={views.done.length} open={showDone} onToggle={() => set({ showDone: !showDone })}>
-            {views.done.map((v) => (
+            {views.done.map(({ view: v }) => (
               <TaskRow key={v.task.id} view={v} selected={v.task.id === openTaskId} />
             ))}
           </Collapsible>
           <Collapsible label="Cancelled" count={views.cancelled.length} open={showCancelled} onToggle={() => set({ showCancelled: !showCancelled })}>
-            {views.cancelled.map((v) => (
+            {views.cancelled.map(({ view: v }) => (
               <TaskRow key={v.task.id} view={v} selected={v.task.id === openTaskId} />
             ))}
           </Collapsible>
         </div>
       </main>
-      {openTask && <TaskPanel key={openTask.id} task={openTask} tags={tags} />}
+      {openTask && <TaskPanel key={openTask.id} task={openTask} palette={palette} />}
     </>
   );
 }
@@ -268,4 +279,11 @@ function Collapsible({
       {open && children}
     </section>
   );
+}
+
+type Row = { view: TaskView; count?: { done: number; of: number } };
+
+/** "Water 2/4": a count entry's copies of the day as one row (task-view `groupCounts`). */
+function countRows(tasks: Task[], dayTasks: Task[], day: string, clock: Parameters<typeof viewOf>[2], palette: Palette): Row[] {
+  return groupCounts(tasks, dayTasks, palette).map(({ task, count }) => ({ view: viewOf(task, day, clock, palette), count }));
 }

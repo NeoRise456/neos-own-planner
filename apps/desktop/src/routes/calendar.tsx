@@ -1,4 +1,4 @@
-import { useMemo, useState, type MouseEvent } from "react";
+import { useLayoutEffect, useMemo, useRef, useState, type MouseEvent } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
 import {
@@ -6,7 +6,6 @@ import {
   type CalendarDay,
   type Clock,
   type LocalDate,
-  type Tag,
   type Task,
   type TaskFields,
   addDays,
@@ -15,7 +14,6 @@ import {
   diffDays,
   eachDay,
   filterByTag,
-  hourRange,
   makeDate,
   minutesToTime,
   mondayOf,
@@ -28,9 +26,9 @@ import {
 import { useData, useLive } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { useClock } from "@/lib/clock";
-import { useTagMap } from "@/lib/data-hooks";
+import { usePalette, useRoutineTasks } from "@/lib/data-hooks";
 import { glyphOf } from "@/lib/glyph";
-import { dayShort, toneOf, visualState } from "@/lib/task-view";
+import { type Palette, dayShort, groupCounts, toneOf, visualState } from "@/lib/task-view";
 import { type Tone, tint, toneHex } from "@/lib/tones";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
@@ -46,6 +44,8 @@ export const Route = createFileRoute("/calendar")({ component: CalendarPage });
 
 /** Pixels per hour (DESIGN.md "Calendar block"). */
 const HOUR = 48;
+/** The scrollbar's width (styles/index.css): the header rows leave room for it so the columns line up. */
+const SCROLLBAR = 6;
 /** How many "during the day" rows an all-day cell shows before "+N more". */
 const DURING_ROWS = 3;
 
@@ -61,7 +61,8 @@ function CalendarPage() {
   const { repos, unavailable } = useData();
   const clock = useClock();
   const today = todayOf(clock);
-  const tags = useTagMap();
+  const palette = usePalette();
+  const tags = palette.tags;
   const { calWeekOffset, calView, calTagFilter: chosen, openTaskId, set } = useUi();
   const tagFilter = chosen && tags.has(chosen) ? chosen : null;
   const [creating, setCreating] = useState<Partial<TaskFields> | null>(null);
@@ -74,7 +75,9 @@ function CalendarPage() {
   const monthLast = makeDate(anchor.year, anchor.month, daysInMonth(anchor.year, anchor.month));
   const [from, to] = calView === "week" ? [monday, sunday] : [mondayOf(monthFirst), addDays(mondayOf(monthLast), 6)];
 
-  const { data: tasks } = useLive(repos ? repos.tasks.between(from, to) : null);
+  const { data: oneOffs } = useLive(repos ? repos.tasks.between(from, to) : null);
+  const { tasks: routineTasks } = useRoutineTasks(from, to);
+  const tasks = useMemo(() => [...oneOffs, ...routineTasks], [oneOffs, routineTasks]);
   const shown = useMemo(() => filterByTag(tasks, tagFilter), [tasks, tagFilter]);
   const days = useMemo(() => eachDay(from, to).map((d) => calendarDay(shown, d, today)), [shown, from, to, today]);
   const rangeTags = useMemo(() => {
@@ -85,7 +88,8 @@ function CalendarPage() {
     return tagsOf(onCalendar, tags, tagFilter);
   }, [tasks, from, to, today, tags, tagFilter]);
   const { data: opened } = useLive(repos && openTaskId ? repos.tasks.byId(openTaskId) : null);
-  const openTask = opened[0];
+  // A routine task never touched isn't saved yet: find it among the tasks on screen.
+  const openTask = opened[0] ?? tasks.find((t) => t.id === openTaskId);
 
   const title =
     calView === "month"
@@ -109,8 +113,8 @@ function CalendarPage() {
 
   return (
     <>
-      <main className="min-w-0 flex-1 px-8">
-        <div className="mx-auto max-w-[1200px] pt-10 pb-16">
+      <main className={cn("min-w-0 flex-1 px-8", calView === "week" && "flex h-full min-h-0 flex-col self-stretch")}>
+        <div className={cn("mx-auto w-full max-w-[1200px] pt-10", calView === "week" ? "flex min-h-0 flex-1 flex-col pb-6" : "pb-16")}>
           <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
             <div className="flex flex-col gap-2">
               <Label>Calendar</Label>
@@ -151,16 +155,16 @@ function CalendarPage() {
           {!repos ? (
             <EmptyState glyph="Ca" title="Nothing can be saved here" body={unavailable} className="mt-10" />
           ) : (
-            <div className="mt-7 overflow-x-auto">
+            <div className={cn("mt-7 overflow-x-auto", calView === "week" && "flex min-h-0 flex-1 flex-col overflow-y-hidden")}>
               {calView === "week" ? (
-                <WeekGrid days={days} today={today} clock={clock} tags={tags} openTaskId={openTaskId} onOpen={open} onCreate={create} />
+                <WeekGrid days={days} today={today} clock={clock} palette={palette} openTaskId={openTaskId} onOpen={open} onCreate={create} />
               ) : (
                 <MonthGrid
                   days={days}
                   month={monthFirst.slice(0, 7)}
                   today={today}
                   clock={clock}
-                  tags={tags}
+                  palette={palette}
                   onOpen={open}
                   onPickDay={(d) => set({ calView: "week", calWeekOffset: diffDays(mondayOf(today), mondayOf(d)) / 7 })}
                 />
@@ -169,7 +173,7 @@ function CalendarPage() {
           )}
         </div>
       </main>
-      {openTask && <TaskPanel key={openTask.id} task={openTask} tags={tags} />}
+      {openTask && <TaskPanel key={openTask.id} task={openTask} palette={palette} />}
       {creating && (
         <NewTaskDialog
           open
@@ -188,15 +192,24 @@ type GridProps = {
   days: CalendarDay[];
   today: LocalDate;
   clock: Clock;
-  tags: Map<string, Tag>;
+  palette: Palette;
   onOpen: (id: string) => void;
 };
 
-function WeekGrid({ days, today, clock, tags, openTaskId, onOpen, onCreate }: GridProps & { openTaskId: string | null; onCreate: (f: Partial<TaskFields>) => void }) {
+function WeekGrid({ days, today, clock, palette, openTaskId, onOpen, onCreate }: GridProps & { openTaskId: string | null; onCreate: (f: Partial<TaskFields>) => void }) {
   const nowMin = timeToMinutes(splitDateTime(clock.at).time);
   const showNow = days.some((d) => d.day === today);
-  const { from, to } = hourRange(days, showNow ? nowMin : undefined);
+  // The whole day; it opens scrolled to Settings → Calendar → "Opens at".
+  const from = 0;
+  const to = 24;
   const height = (to - from) * HOUR;
+  const startHour = useUi((s) => s.calStartHour);
+  const scroller = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    if (scroller.current) scroller.current.scrollTop = startHour * HOUR;
+    // Only when the grid appears (opening the calendar, or Month → Week).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const nowTop = ((nowMin - from * 60) / 60) * HOUR;
   const cols = "grid grid-cols-[56px_repeat(7,minmax(0,1fr))]";
   const [allDayOpen, setAllDayOpen] = useState(false);
@@ -207,12 +220,12 @@ function WeekGrid({ days, today, clock, tags, openTaskId, onOpen, onCreate }: Gr
     const y = e.clientY - e.currentTarget.getBoundingClientRect().top;
     return slotAt(from * 60 + (y / HOUR) * 60);
   };
-  const moreRows = Math.max(0, ...days.map((d) => d.during.length - DURING_ROWS));
+  const moreRows = Math.max(0, ...days.map((d) => groupCounts(d.during, d.during, palette).length - DURING_ROWS));
 
   return (
-    <div className="min-w-[600px]">
+    <div className="flex min-h-0 min-w-[600px] flex-1 flex-col">
       {/* day header */}
-      <div className={cn(cols, "border-b border-ink-line-soft pb-2.5")}>
+      <div className={cn(cols, "border-b border-ink-line-soft pb-2.5")} style={{ paddingRight: SCROLLBAR }}>
         <span />
         {days.map(({ day }) => {
           const isToday = day === today;
@@ -228,23 +241,33 @@ function WeekGrid({ days, today, clock, tags, openTaskId, onOpen, onCreate }: Gr
       </div>
 
       {/* all-day row: deadlines, then the tasks that float through the day */}
-      <div className={cn(cols, "border-b border-ink-line-soft")}>
+      <div className={cn(cols, "border-b border-ink-line-soft")} style={{ paddingRight: SCROLLBAR }}>
         <span className="py-2.5 font-ui text-[11px] leading-[14px] text-fg-label uppercase">
           All
           <br />
           day
         </span>
         {days.map((d) => {
-          const rows = allDayOpen ? d.during : d.during.slice(0, DURING_ROWS);
-          const hidden = d.during.length - rows.length;
+          // "Water 2/4": a count entry's copies are one row.
+          const during = groupCounts(d.during, d.during, palette);
+          const rows = allDayOpen ? during : during.slice(0, DURING_ROWS);
+          const hidden = during.length - rows.length;
           return (
             <div key={d.day} className="group relative flex min-h-[64px] flex-col gap-1 border-l border-ink-line-faint px-1 py-2">
               {d.deadlines.map((t) => (
                 <DeadlineChip key={t.id} task={t} clock={clock} selected={t.id === openTaskId} onOpen={() => onOpen(t.id)} />
               ))}
-              {d.during.length > 0 && <span className="px-1 font-ui text-[11px] text-fg-label">{d.during.length} during the day</span>}
-              {rows.map((t) => (
-                <TaskLine key={t.id} task={t} clock={clock} tags={tags} selected={t.id === openTaskId} onOpen={() => onOpen(t.id)} />
+              {during.length > 0 && <span className="px-1 font-ui text-[11px] text-fg-label">{during.length} during the day</span>}
+              {rows.map(({ task: t, count }) => (
+                <TaskLine
+                  key={t.id}
+                  task={t}
+                  clock={clock}
+                  palette={palette}
+                  time={count ? `${count.done}/${count.of}` : undefined}
+                  selected={t.id === openTaskId}
+                  onOpen={() => onOpen(t.id)}
+                />
               ))}
               {hidden > 0 && (
                 <button type="button" onClick={() => setAllDayOpen(true)} className="self-start rounded-btn px-1 font-ui text-[11px] text-fg-label hover:text-fg-white">
@@ -272,57 +295,59 @@ function WeekGrid({ days, today, clock, tags, openTaskId, onOpen, onCreate }: Gr
         </div>
       )}
 
-      {/* hours */}
-      <div className={cn(cols, "pt-1.5")}>
-        <div className="relative" style={{ height }}>
-          {Array.from({ length: to - from }, (_, k) => (
-            <span key={k} className="absolute left-0 font-ui text-[11px] text-fg-label tabular-nums" style={{ top: k * HOUR + 3 }}>
-              {hm((from + k) * 60)}
-            </span>
-          ))}
-          {showNow && (
-            <span className="absolute left-0 z-[3] rounded-step bg-fg-white px-1 py-px font-ui text-[11px] text-black tabular-nums" style={{ top: nowTop - 8 }}>
-              {hm(nowMin)}
-            </span>
-          )}
-        </div>
-        {days.map((d) => (
-          <div
-            key={d.day}
-            className="relative cursor-pointer border-l border-ink-line-faint"
-            style={{ height, background: `repeating-linear-gradient(to bottom,#161616 0 1px,transparent 1px ${HOUR}px)` }}
-            onMouseMove={(e) => {
-              if (e.target !== e.currentTarget) return setHover(null);
-              const min = slotOf(e);
-              if (hover?.day !== d.day || hover.min !== min) setHover({ day: d.day, min });
-            }}
-            onMouseLeave={() => setHover(null)}
-            onClick={(e) => {
-              // Only empty space: a click on a block opens the task instead.
-              if (e.target !== e.currentTarget) return;
-              onCreate({ startDate: d.day, startTime: minutesToTime(slotOf(e)), duration: 60 });
-            }}
-          >
-            {hover?.day === d.day && (
-              <div
-                aria-hidden
-                className="pointer-events-none absolute right-1 left-1 flex items-start gap-1 rounded-card border border-ink-line px-2 py-1 font-ui text-[11px] text-fg-label tabular-nums"
-                style={{ top: ((hover.min - from * 60) / 60) * HOUR + 1, height: HOUR / 2 - 2 }}
-              >
-                <PlusIcon size={8} className="mt-[3px]" />
-                {hm(hover.min)}
-              </div>
-            )}
-            {d.blocks.map((b) => (
-              <Block key={b.task.id} block={b} from={from} clock={clock} tags={tags} selected={b.task.id === openTaskId} onOpen={() => onOpen(b.task.id)} />
+      {/* hours: 00–24, scrolling on their own */}
+      <div ref={scroller} aria-label="Hours" tabIndex={-1} className="min-h-0 flex-1 overflow-y-auto outline-none">
+        <div className={cn(cols, "pt-1.5")}>
+          <div className="relative" style={{ height }}>
+            {Array.from({ length: to - from }, (_, k) => (
+              <span key={k} className="absolute left-0 font-ui text-[11px] text-fg-label tabular-nums" style={{ top: k * HOUR + 3 }}>
+                {hm((from + k) * 60)}
+              </span>
             ))}
-            {showNow && d.day === today && (
-              <div aria-label="Now" className="pointer-events-none absolute right-0 -left-px z-[3] h-0.5 bg-fg-white" style={{ top: nowTop }}>
-                <span className="absolute -top-[3px] -left-1 size-2 rounded-full bg-fg-white" />
-              </div>
+            {showNow && (
+              <span className="absolute left-0 z-[3] rounded-step bg-fg-white px-1 py-px font-ui text-[11px] text-black tabular-nums" style={{ top: nowTop - 8 }}>
+                {hm(nowMin)}
+              </span>
             )}
           </div>
-        ))}
+          {days.map((d) => (
+            <div
+              key={d.day}
+              className="relative cursor-pointer border-l border-ink-line-faint"
+              style={{ height, background: `repeating-linear-gradient(to bottom,#161616 0 1px,transparent 1px ${HOUR}px)` }}
+              onMouseMove={(e) => {
+                if (e.target !== e.currentTarget) return setHover(null);
+                const min = slotOf(e);
+                if (hover?.day !== d.day || hover.min !== min) setHover({ day: d.day, min });
+              }}
+              onMouseLeave={() => setHover(null)}
+              onClick={(e) => {
+                // Only empty space: a click on a block opens the task instead.
+                if (e.target !== e.currentTarget) return;
+                onCreate({ startDate: d.day, startTime: minutesToTime(slotOf(e)), duration: 60 });
+              }}
+            >
+              {hover?.day === d.day && (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute right-1 left-1 flex items-start gap-1 rounded-card border border-ink-line px-2 py-1 font-ui text-[11px] text-fg-label tabular-nums"
+                  style={{ top: ((hover.min - from * 60) / 60) * HOUR + 1, height: HOUR / 2 - 2 }}
+                >
+                  <PlusIcon size={8} className="mt-[3px]" />
+                  {hm(hover.min)}
+                </div>
+              )}
+              {d.blocks.map((b) => (
+                <Block key={b.task.id} block={b} from={from} clock={clock} palette={palette} selected={b.task.id === openTaskId} onOpen={() => onOpen(b.task.id)} />
+              ))}
+              {showNow && d.day === today && (
+                <div aria-label="Now" className="pointer-events-none absolute right-0 -left-px z-[3] h-0.5 bg-fg-white" style={{ top: nowTop }}>
+                  <span className="absolute -top-[3px] -left-1 size-2 rounded-full bg-fg-white" />
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -338,19 +363,19 @@ function Block({
   block,
   from,
   clock,
-  tags,
+  palette,
   selected,
   onOpen,
 }: {
   block: CalendarBlock;
   from: number;
   clock: Clock;
-  tags: Map<string, Tag>;
+  palette: Palette;
   selected: boolean;
   onOpen: () => void;
 }) {
   const { task, start, end, lane, lanes, hasDuration } = block;
-  const tone = toneOf(task, tags);
+  const tone = toneOf(task, palette);
   const t = toneHex(tone);
   const state = visualState(task, clock);
   const h = Math.max(((end - start) / 60) * HOUR - 2, 14);
@@ -506,14 +531,14 @@ function DeadlineChip({ task, clock, selected, onOpen }: { task: Task; clock: Cl
 function TaskLine({
   task,
   clock,
-  tags,
+  palette,
   time,
   selected,
   onOpen,
 }: {
   task: Task;
   clock: Clock;
-  tags: Map<string, Tag>;
+  palette: Palette;
   time?: string;
   selected?: boolean;
   onOpen: () => void;
@@ -535,9 +560,9 @@ function TaskLine({
       )}
     >
       {state === "done" ? (
-        <CheckIcon size={8} className="shrink-0" style={{ color: selected ? "#000" : toneHex(toneOf(task, tags)) }} />
+        <CheckIcon size={8} className="shrink-0" style={{ color: selected ? "#000" : toneHex(toneOf(task, palette)) }} />
       ) : (
-        <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: state === "todo" ? toneHex(toneOf(task, tags)) : "#3A3A3A" }} />
+        <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: state === "todo" ? toneHex(toneOf(task, palette)) : "#3A3A3A" }} />
       )}
       {time && <span className={cn("shrink-0 font-ui text-[11px] tabular-nums", selected ? "text-black/60" : "text-fg-label")}>{time}</span>}
       <span
@@ -560,7 +585,7 @@ function TaskLine({
  * tasks as tone squares + titles (timed ones with their time, deadlines with a flag),
  * today as a white pill. Clicking a day opens its week; clicking a task opens it.
  */
-function MonthGrid({ days, month, today, clock, tags, onOpen, onPickDay }: Omit<GridProps, "openTaskId"> & { month: string; onPickDay: (d: LocalDate) => void }) {
+function MonthGrid({ days, month, today, clock, palette, onOpen, onPickDay }: Omit<GridProps, "openTaskId"> & { month: string; onPickDay: (d: LocalDate) => void }) {
   return (
     <div className="min-w-[600px]">
       <div className="grid grid-cols-7 border-b border-ink-line-soft pb-2.5">
@@ -575,7 +600,7 @@ function MonthGrid({ days, month, today, clock, tags, onOpen, onPickDay }: Omit<
           const items: { task: Task; time?: string; deadline?: boolean }[] = [
             ...d.deadlines.map((task) => ({ task, deadline: true, time: task.dueTime })),
             ...d.blocks.map((b) => ({ task: b.task, time: hm(b.start) })),
-            ...d.during.map((task) => ({ task })),
+            ...groupCounts(d.during, d.during, palette).map(({ task, count }) => ({ task, time: count ? `${count.done}/${count.of}` : undefined })),
           ];
           const inMonth = d.day.slice(0, 7) === month;
           const isToday = d.day === today;
@@ -619,7 +644,7 @@ function MonthGrid({ days, month, today, clock, tags, onOpen, onPickDay }: Omit<
                     <span className="read min-w-0 truncate text-[11px] font-semibold text-fg-white">{task.title}</span>
                   </button>
                 ) : (
-                  <TaskLine key={task.id} task={task} clock={clock} tags={tags} time={time} onOpen={() => onOpen(task.id)} />
+                  <TaskLine key={task.id} task={task} clock={clock} palette={palette} time={time} onOpen={() => onOpen(task.id)} />
                 ),
               )}
               {items.length > 3 && <span className="px-1 font-ui text-[11px] text-fg-label">+{items.length - 3} more</span>}

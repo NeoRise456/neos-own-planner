@@ -349,6 +349,21 @@ Details this doc didn't settle, as `packages/core` implements them:
 - **Consistency** counts tasks by the day the entry placed them on, wherever you moved them. A task ticked early, before its day, already counts as done.
 - **A protocol can have no steps** while you set it up (with a warning). An empty step isn't allowed.
 
+## Decided while building routines and protocols (phase 5)
+
+- **A routine has a color** (a tone or a custom hex). Its tasks, blocks and tiles light up in it; a one-off task keeps its first tag's color.
+- **Routine tasks are produced for the days on screen** and saved on the first touch (tick, cancel, move, edit, tag): the saved one has the id derived from entry + day + slot, so it can only ever exist once.
+- **Deleting a routine task cancels it** (it's history), and saves it.
+- **Where the rules say saved tasks stop existing** (an earlier end date, End, a removed entry, back to draft, deleting the routine), they're deleted in the same write. Done ones never are, except by deleting a routine (only possible while nothing is done).
+- **"Water 2/4"** shows as one row in Todo (and in the Calendar's during-the-day list); its check ticks the next open copy. Done copies also show in Done.
+- **A routine task due the same day it starts** ("Vitamins, by 12:00") is "during the day", not a deadline flag on the calendar.
+- **An entry's form** has: what (title), how often (daily / weekly / monthly by day or by "last Fri" / yearly, every N), each day gets (fixed times or a count), tags, notes, protocol, and a preview of the next three days it lands on.
+- **Each fixed time has its own start, end and deadline**, like a one-off task: "Meds 08:00 → 08:15 and 18:00 → 19:00". The end is stored as that time's length (`SlotTime.duration`); a time with no start can still have a length ("sometime that day, 20m"). The deadline is optional and hidden behind "+ Add a deadline". A deadline inside its block gets the same warning as a task. Entries saved before this keep working: their one shared length applies to every time until the entry is next saved.
+- **A count has one length for each copy** ("Water 4 times, 5m each") and an optional "all by".
+- **Duplicating** suggests a start the day after the old one ends (or today, if later) and the same length; both can be changed.
+- **A protocol's tile** lights up in the color of the first running routine that uses it.
+- **One-off tasks can use a protocol** ("+ Add a protocol" in the task form). Opening a task shows its routine (name, purpose) and its protocol's steps.
+
 ## Not included (on purpose)
 - Repeating tasks outside a routine
 - Routines without an end date

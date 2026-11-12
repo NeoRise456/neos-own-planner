@@ -3,12 +3,11 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { toneHex } from "@/lib/tones";
 import { useNow } from "@/lib/use-now";
-import { todayOf } from "@planner/core";
+import { type Protocol, protocolStatus, routineStatus, sortByProtocolStatus, todayOf } from "@planner/core";
 import { useClock } from "@/lib/clock";
-import { useTodoDay } from "@/lib/data-hooks";
+import { useProtocolMap, useRoutineModel, useTodoDay } from "@/lib/data-hooks";
+import type { Tone } from "@/lib/tones";
 import { formatOffset, useUi } from "@/stores/ui";
-import { protocolStatusOf, useMock } from "@/mock/store";
-import type { MockProtocol } from "@/mock/data";
 import { DotLogo } from "@/components/ui/bits";
 import {
   CalendarIcon,
@@ -29,19 +28,24 @@ export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
   const clock = useClock();
   const { todo } = useTodoDay(todayOf(clock), clock);
-  const routines = useMock((s) => s.routines);
-  const protocols = useMock((s) => s.protocols);
+  const today = todayOf(clock);
+  const { routines, entries } = useRoutineModel();
+  const protocols = [...useProtocolMap().values()];
   const navigate = useNavigate();
   const [newRoutine, setNewRoutine] = useState(false);
   const [newProtocol, setNewProtocol] = useState(false);
 
   const openCount = todo.missed.length + todo.scheduled.length + todo.during.length + todo.anytime.length;
-  const active = routines.filter((r) => !r.ended && !r.draft);
-  const drafts = routines.filter((r) => r.draft);
-  const ended = routines.filter((r) => r.ended);
+  // Running and upcoming first, then drafts, then ended (SYSTEMS.md "Status").
+  const statusOf = (id: string) => routineStatus(routines.find((r) => r.id === id)!, today);
+  const active = routines.filter((r) => ["active", "upcoming"].includes(statusOf(r.id)));
+  const drafts = routines.filter((r) => statusOf(r.id) === "draft");
+  const ended = routines.filter((r) => statusOf(r.id) === "ended");
+  const toneOfRoutine = (c?: string) => toneHex((c ?? "stone") as Tone);
   // Protocols by status (SYSTEMS.md "Protocol status"): active, then unused, then past.
-  const protocolGroups = { active: [] as MockProtocol[], unused: [] as MockProtocol[], past: [] as MockProtocol[] };
-  for (const p of protocols) protocolGroups[protocolStatusOf(p, routines).status].push(p);
+  const protocolGroups = { active: [] as Protocol[], unused: [] as Protocol[], past: [] as Protocol[] };
+  for (const { protocol, status } of sortByProtocolStatus(protocols.map((p) => ({ protocol: p, status: protocolStatus(p.id, routines, entries, today) }))))
+    protocolGroups[status].push(protocol);
 
   const on = (p: string) => path === p || path.startsWith(`${p}/`);
 
@@ -63,20 +67,20 @@ export function Sidebar() {
       {on("/routines") && (
         <SubList>
           {active.map((r) => (
-            <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone={toneHex(r.tone)} current={path === `/routines/${r.id}`}>
-              {r.name}
+            <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone={toneOfRoutine(r.color)} current={path === `/routines/${r.id}`}>
+              {r.title}
             </SubItem>
           ))}
           {drafts.length > 0 && <GroupHeading>Drafts</GroupHeading>}
           {drafts.map((r) => (
-            <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone={toneHex(r.tone)} hollow current={path === `/routines/${r.id}`}>
-              {r.name}
+            <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone={toneOfRoutine(r.color)} hollow current={path === `/routines/${r.id}`}>
+              {r.title}
             </SubItem>
           ))}
           {ended.length > 0 && <GroupHeading>Ended</GroupHeading>}
           {ended.map((r) => (
             <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone="#3A3A3A" dim current={path === `/routines/${r.id}`}>
-              {r.name}
+              {r.title}
             </SubItem>
           ))}
           <NewItem onClick={() => setNewRoutine(true)}>New routine</NewItem>
@@ -86,13 +90,13 @@ export function Sidebar() {
       {on("/protocols") && (
         <SubList>
           {protocolGroups.active.map((p) => (
-            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone={toneHex(p.tone)} current={path === `/protocols/${p.id}`}>
+            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone="#9A9A9A" current={path === `/protocols/${p.id}`}>
               {p.title}
             </SubItem>
           ))}
           {protocolGroups.unused.length > 0 && <GroupHeading>Unused</GroupHeading>}
           {protocolGroups.unused.map((p) => (
-            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone={toneHex(p.tone)} hollow current={path === `/protocols/${p.id}`}>
+            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone="#9A9A9A" hollow current={path === `/protocols/${p.id}`}>
               {p.title}
             </SubItem>
           ))}
@@ -234,17 +238,10 @@ function SidebarClock() {
   const now = useNow();
   const offset = useUi((s) => s.utcOffsetMinutes);
   return (
-    <Link
-      to="/settings"
-      title="Time zone — click to change"
-      aria-label={`${now.label}, ${now.dateLabel}, ${formatOffset(offset)}. Change time zone`}
-      className="group flex flex-col gap-1.5 rounded-card px-2.5 py-2 no-underline transition-colors duration-[120ms] hover:bg-ink-line-faint"
-    >
+    <div role="timer" aria-label={`${now.label}, ${now.dateLabel}, ${formatOffset(offset)}`} className="flex flex-col gap-1.5 px-2.5 py-2">
       <span className="glyph text-[34px] leading-none tracking-[.04em] text-fg-white tabular-nums">{now.label}</span>
       <span className="font-ui text-[12px] leading-4 text-fg-secondary uppercase">{now.dateLabel}</span>
-      <span className="font-ui text-[11px] leading-[14px] text-fg-label tabular-nums group-hover:text-fg-secondary">
-        {formatOffset(offset)}
-      </span>
-    </Link>
+      <span className="font-ui text-[11px] leading-[14px] text-fg-label tabular-nums">{formatOffset(offset)}</span>
+    </div>
   );
 }
