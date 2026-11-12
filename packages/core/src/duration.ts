@@ -1,3 +1,5 @@
+import { type LocalTime, minutesToTime, timeToMinutes } from "./dates";
+
 /**
  * Durations as people type them in the task form ("20m", "1h", "1h 30m", "1.5h", "90")
  * ↔ whole minutes, which is what a task stores.
@@ -18,6 +20,20 @@ export function parseDuration(text: string): number | null {
 
 function positive(n: number): number | null {
   return Number.isInteger(n) && n > 0 ? n : null;
+}
+
+/**
+ * The task form shows a timed task's length as an end time (TASK.md, phase 4).
+ * The end of `start` + `minutes`; a block never runs past midnight, so it stops at 23:59.
+ */
+export function endTimeOf(start: LocalTime, minutes: number): LocalTime {
+  return minutesToTime(Math.min(timeToMinutes(start) + minutes, 23 * 60 + 59));
+}
+
+/** Minutes from `start` to `end` on the same day; null when the end isn't after the start. */
+export function minutesBetween(start: LocalTime, end: LocalTime): number | null {
+  const m = timeToMinutes(end) - timeToMinutes(start);
+  return m > 0 ? m : null;
 }
 
 /** 20 → "20m", 60 → "1h", 90 → "1h 30m". */

@@ -151,6 +151,15 @@ describe("validation", () => {
     expect(sameDay.warnings.map((w) => w.code)).toEqual(["due_before_start"]);
   });
 
+  it("a deadline inside the block → allowed, with a warning that names both times", () => {
+    const check = validateTask(task({ startDate: "2026-11-12", startTime: "07:00", duration: 180, dueDate: "2026-11-12", dueTime: "09:30" }));
+    expect(check.errors).toEqual([]);
+    expect(check.warnings.map((w) => w.message)).toEqual(["The deadline (09:30) is before the block ends (10:00)."]);
+    // At the end, or after it: fine.
+    expect(validateTask(task({ startDate: "2026-11-12", startTime: "07:00", duration: 180, dueDate: "2026-11-12", dueTime: "10:00" })).warnings).toEqual([]);
+    expect(validateTask(task({ startDate: "2026-11-12", startTime: "07:00", duration: 180, dueDate: "2026-11-13" })).warnings).toEqual([]);
+  });
+
   it("due already in the past → allowed, no warning, missed from the start", () => {
     const created = createTask("t", { title: "Pay phone bill", dueDate: "2026-11-01" });
     expect(created.ok && created.warnings).toEqual([]);

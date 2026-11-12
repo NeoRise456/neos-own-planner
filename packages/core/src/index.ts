@@ -10,6 +10,7 @@ export * from "./task";
 export * from "./recurrence";
 export * from "./routine";
 export * from "./todo";
+export * from "./calendar";
 export * from "./protocol";
 export * from "./tag";
 export * from "./settings";

@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, parseDuration, parseTimeInput } from "../src";
+import { endTimeOf, formatDuration, minutesBetween, parseDuration, parseTimeInput } from "../src";
+
+describe("end time ↔ duration (the task form)", () => {
+  it("the end is start + length, stopping at 23:59", () => {
+    expect(endTimeOf("07:00", 150)).toBe("09:30");
+    expect(endTimeOf("22:30", 180)).toBe("23:59");
+  });
+  it("the length is end − start, only when the end is after the start", () => {
+    expect(minutesBetween("07:00", "09:30")).toBe(150);
+    expect(minutesBetween("09:30", "09:30")).toBeNull();
+    expect(minutesBetween("10:00", "09:00")).toBeNull();
+  });
+});
 
 describe("parseDuration", () => {
   it.each([

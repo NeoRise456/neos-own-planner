@@ -227,5 +227,22 @@ Details these docs didn't settle, as `packages/core` implements them:
 - **Settings → Tags** lists every tag with how many tasks have it (open or closed). Rename in place; a name another tag already has offers to **merge** the two (every task gets the other tag, in the same place in its list, never twice; can't be undone, so it asks first). **Deleting a tag** asks first ("It comes off the 3 tasks that have it; the tasks themselves stay"), then takes it off every task; the tasks stay. The toast still offers Undo, which puts the same tag back on the same tasks in the same place (the first tag decides a task's color).
 - **No filter by routine.** A routine's tags are copied onto every task it makes, so the tag filter covers routines.
 
+## Decided while building the Calendar (phase 4)
+
+- **Only dated tasks are on the calendar.** Anytime tasks (no date) live in Todo.
+- **Blocks** are timed tasks, on their start day, from the start time for their duration. A timed task with no end is drawn as a **marker** (a thin line at its start time with a small label), not a block with a made-up length. A block stops at midnight (crossing midnight isn't supported). Blocks that overlap sit **side by side**.
+- **The form sets a timed task's length as an end time.** With a start time, the form shows *Start time* and *End time* (the length is shown under it); without a start time it shows *Duration* (planned time, e.g. "Read, 30 min"). The task still stores a duration. Changing the start time moves the end along; removing the start time turns the length back into a duration. The end must be after the start, on the same day.
+- **"Due" is called "Deadline" in the app**: the latest it can be done, never the end of the block. It sits behind "+ Add a deadline" in the form.
+- **One task, no types — in the form too.** Fields show up as they become relevant (a start time once there's a day, an end once there's a time), and a summary line says what the task will do and when it turns missed ("Thu 12 Nov, 07:00–10:00 · missed after 10:00"), with any warning under it.
+- **A deadline inside the block** (start 07:00, end 10:00, deadline 09:30) is allowed, with a warning: "The deadline (09:30) is before the block ends (10:00)." The task is missed from 09:31, even while its block is still running.
+- **A timed task due on a later day** (start Mon 08:30, deadline Fri) is its block on Monday, then "during the day" on Tue–Thu ("since Mon · by Fri"), in Todo and Calendar, until it's done; on Friday it's the deadline (in Todo: during the day). Done on Wednesday → it shows on Wednesday (the block stays on Monday's calendar). Its block counts toward the planned time on Monday only.
+- **Deadlines** are tasks due that day, as a flag chip in the all-day row with the due time. A timed task due the same day it starts is just its block.
+- **During the day** = floating tasks that show that day, the same days as in Todo (a range shows every day until it's done). On its due day the task shows as the deadline instead, never twice. The all-day row lists 3, then "+N more".
+- **The hours** shown are 07:00–21:00, stretched to fit the week's earliest and latest block, and the current time when today is in view (so the now line never falls off the grid).
+- **Click-to-create:** clicking empty space in a day column opens a new task at that half hour, 1 hour long; the "+" in a day's all-day cell makes a task on that day with no time; "New task" in the header starts on today. The form is the full task form. With a tag filter on, the new task starts with that tag.
+- **Clicking a task** opens the same panel as in Todo (tick, move, edit). Month view: clicking a day opens its week.
+- **Tag filter** works like Todo's, with its own selection.
+- Routine tasks join the calendar in phase 5.
+
 ## Not part of a task (for now)
 Priority, subtasks, reminders, time windows for floating tasks, crossing midnight.

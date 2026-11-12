@@ -1,6 +1,6 @@
 /**
- * The task form and Move — on the real database. Fields are checked by @planner/core
- * (`editTask`) before saving, so its messages show under the right field; the
+ * The task form (new + edit) and Move — on the real database. Fields are checked by
+ * @planner/core (`createTask` / `editTask`) before saving, so its messages show under the right field; the
  * repository checks again when it writes.
  */
 import { useEffect, useState } from "react";
@@ -10,8 +10,11 @@ import {
   type Tag,
   type Task,
   type TaskFields,
+  createTask,
   editTask,
+  endTimeOf,
   formatDuration,
+  minutesBetween,
   parseDuration,
   scheduleForMove,
   todayOf,
@@ -26,7 +29,8 @@ import { Dialog, DialogActions, DialogContent } from "@/components/ui/dialog";
 import { Field, Input, Textarea } from "@/components/ui/field";
 import { DateField } from "@/components/ui/date-picker";
 import { TimeField } from "@/components/ui/time-picker";
-import { TrashIcon } from "@/components/ui/icons";
+import { PlusIcon, TrashIcon } from "@/components/ui/icons";
+import { formSummary } from "@/lib/task-view";
 import { toast } from "@/components/ui/toast";
 import { type FormTag, TagBox, toTagRefs } from "./tag-box";
 
@@ -39,9 +43,23 @@ function byField(issues: Issue[]): Record<string, string> {
   return out;
 }
 
-/* ── Edit task (title, notes, tags, start, due, duration) ─────────── */
+/* ── Task form (title, notes, tags, start, end, deadline) ─────────── */
 
 export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
+  return <TaskForm {...p} task={task} />;
+}
+
+/** A new one-off task, starting from `initial` (e.g. the calendar slot that was clicked). */
+export function NewTaskDialog({ initial, onCreated, ...p }: OpenProps & { initial: Partial<TaskFields>; onCreated?: (task: Task) => void }) {
+  return <TaskForm {...p} initial={initial} onCreated={onCreated} />;
+}
+
+function TaskForm({
+  task,
+  initial,
+  onCreated,
+  ...p
+}: OpenProps & { task?: Task; initial?: Partial<TaskFields>; onCreated?: (task: Task) => void }) {
   const repos = useRepos();
   const tagMap = useTagMap();
   const [title, setTitle] = useState("");
@@ -51,30 +69,69 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
   const [startTime, setStartTime] = useState("");
   const [dueDate, setDueDate] = useState("");
   const [dueTime, setDueTime] = useState("");
+  /** With a start time the length is set as an end time; without one, as a duration. */
+  const [endTime, setEndTime] = useState("");
   const [duration, setDuration] = useState("");
+  /** The deadline row shows once asked for (or when the task has one). */
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!p.open) return;
-    setTitle(task.title);
-    setNotes(task.notes ?? "");
-    setTags(task.tags.map((id) => tagMap.get(id)).filter((t): t is Tag => !!t));
-    setStartDate(task.startDate ?? "");
-    setStartTime(task.startTime ?? "");
-    setDueDate(task.dueDate ?? "");
-    setDueTime(task.dueTime ?? "");
-    setDuration(task.duration !== undefined ? formatDuration(task.duration) : "");
+    const f: Partial<TaskFields> = task ?? initial ?? {};
+    setTitle(f.title ?? "");
+    setNotes(f.notes ?? "");
+    setTags((f.tags ?? []).map((id) => tagMap.get(id)).filter((t): t is Tag => !!t));
+    setStartDate(f.startDate ?? "");
+    setStartTime(f.startTime ?? "");
+    setDueDate(f.dueDate ?? "");
+    setDueTime(f.dueTime ?? "");
+    const timed = f.startTime !== undefined && f.duration !== undefined;
+    setEndTime(timed ? endTimeOf(f.startTime!, f.duration!) : "");
+    setDuration(!timed && f.duration !== undefined ? formatDuration(f.duration) : "");
+    setDeadlineOpen(f.dueDate !== undefined);
     setErrors({});
     // Only when the dialog opens — not when tags change while it's open.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [p.open, task]);
 
-  function changes(): Partial<TaskFields> | null {
-    const minutes = duration.trim() === "" ? undefined : parseDuration(duration);
-    if (minutes === null) {
-      setErrors({ duration: "Use minutes or hours, like 20m, 1h or 1h 30m." });
-      return null;
+  const length = startTime && endTime ? minutesBetween(startTime, endTime) : null;
+
+  /** Changing the start keeps the length: the end moves along. Adding or removing the time switches end ↔ duration. */
+  function changeStartTime(next: string) {
+    if (next && startTime && length !== null) setEndTime(endTimeOf(next, length));
+    else if (next && !startTime) {
+      const typed = parseDuration(duration);
+      if (typed !== null) setEndTime(endTimeOf(next, typed));
+    } else if (!next && startTime) {
+      setDuration(length !== null ? formatDuration(length) : "");
+      setEndTime("");
     }
+    setStartTime(next);
+  }
+
+  /** A day cleared takes its time with it (a time always goes with its date). */
+  function changeStartDate(next: string) {
+    if (!next) changeStartTime("");
+    setStartDate(next);
+  }
+  function changeDueDate(next: string) {
+    if (!next) setDueTime("");
+    setDueDate(next);
+  }
+
+  /** The length in minutes: from the end time with a start time, else the typed duration. */
+  function readLength(): { minutes?: number; error?: Record<string, string> } {
+    if (startTime) {
+      if (!endTime) return {};
+      return length !== null ? { minutes: length } : { error: { endTime: "The end has to be after the start." } };
+    }
+    if (duration.trim() === "") return {};
+    const m = parseDuration(duration);
+    return m !== null ? { minutes: m } : { error: { duration: "Use minutes or hours, like 20m, 1h or 1h 30m." } };
+  }
+
+  function fields(minutes: number | undefined): Partial<TaskFields> {
     return {
       title,
       notes,
@@ -86,24 +143,47 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
     };
   }
 
+  function changes(): Partial<TaskFields> | null {
+    const { minutes, error } = readLength();
+    if (error) {
+      setErrors(error);
+      return null;
+    }
+    return fields(minutes);
+  }
+
+  // What the task will do, as it's filled in.
+  const summary = (() => {
+    const { minutes, error } = readLength();
+    if (error) return null;
+    const f = fields(minutes);
+    return formSummary(
+      Object.fromEntries(Object.entries({ ...f, id: "preview", title: title.trim() || "Untitled", notes: undefined, tags: [] }).filter(([, v]) => v !== undefined)) as unknown as Task,
+    );
+  })();
+
   async function save() {
     const c = changes();
     if (!c) return;
-    // Ask the rules first (tags can't make it invalid, so the current ones stand in).
-    const preview = editTask(task, c);
+    // Ask the rules first (tags can't make it invalid, so they're left out here).
+    const preview = task ? editTask(task, c) : createTask("preview", { ...c, title: c.title ?? "", tags: [] });
     if (!preview.ok) {
       setErrors(byField(preview.errors));
       return;
     }
     // New tag names are created in the same write as the task: all or nothing.
-    const saved = await act(repos.tasks.edit(task.id, c, toTagRefs(tags)));
+    const saved = await act(
+      task ? repos.tasks.edit(task.id, c, toTagRefs(tags)) : repos.tasks.create({ ...c, title: c.title ?? "", tags: [] }, toTagRefs(tags)),
+    );
     if (!saved) return;
     p.onOpenChange(false);
     const w = validateTask(saved).warnings[0];
-    toast(w ? `Saved. ${w.message}` : "Saved.");
+    toast(`${task ? "Saved." : `Added “${saved.title}”.`}${w ? ` ${w.message}` : ""}`);
+    if (!task) onCreated?.(saved);
   }
 
   async function remove() {
+    if (!task) return;
     const out = await act(repos.tasks.remove(task.id));
     if (!out) return;
     p.onOpenChange(false);
@@ -117,7 +197,7 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
 
   return (
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
-      <DialogContent title="Edit task" width={520}>
+      <DialogContent title={task ? "Edit task" : "New task"} width={520}>
         <form
           className="flex flex-col gap-4"
           onSubmit={(e) => {
@@ -132,35 +212,78 @@ export function EditTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
           <Field label="Tags" help="Type to search your tags. Enter adds the highlighted one; a new name is created when you save.">
             {(a) => <TagBox {...a} value={tags} onChange={setTags} known={[...tagMap.values()]} />}
           </Field>
+          {/* Fields show up as they become relevant: a start time once there's a day, an end once there's a time. */}
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Start day" error={errors.startDate}>
-              {(a) => <DateField {...a} value={startDate} onChange={setStartDate} />}
+            <Field label="Day" help={startDate ? undefined : "Optional. Without a day it's an anytime task."} error={errors.startDate}>
+              {(a) => <DateField {...a} value={startDate} onChange={changeStartDate} />}
             </Field>
-            <Field label="Start time" error={errors.startTime}>
-              {(a) => <TimeField {...a} value={startTime} onChange={setStartTime} />}
-            </Field>
-            <Field label="Due day" error={errors.dueDate}>
-              {(a) => <DateField {...a} value={dueDate} onChange={setDueDate} />}
-            </Field>
-            <Field label="Due time" error={errors.dueTime}>
-              {(a) => <TimeField {...a} value={dueTime} onChange={setDueTime} />}
-            </Field>
-            <Field label="Duration" help="e.g. 20m, 1h 30m" error={errors.duration}>
-              {(a) => <Input {...a} placeholder="—" value={duration} onChange={(e) => setDuration(e.target.value)} />}
-            </Field>
+            {startDate ? (
+              <Field label="Start time" error={errors.startTime}>
+                {(a) => <TimeField {...a} value={startTime} onChange={changeStartTime} />}
+              </Field>
+            ) : (
+              <span />
+            )}
+            {startTime ? (
+              <Field
+                label="End time"
+                help={length !== null ? `Length ${formatDuration(length)}` : "Optional: how long it takes"}
+                error={errors.endTime ?? errors.duration}
+              >
+                {(a) => <TimeField {...a} placeholder="No end" value={endTime} onChange={setEndTime} />}
+              </Field>
+            ) : (
+              <Field label="Duration" help="Planned time, e.g. 20m, 1h 30m" error={errors.duration}>
+                {(a) => <Input {...a} placeholder="—" value={duration} onChange={(e) => setDuration(e.target.value)} />}
+              </Field>
+            )}
           </div>
+          {deadlineOpen ? (
+            <div className="grid grid-cols-2 gap-3 border-t border-ink-line-soft pt-4">
+              <Field label="Deadline" help="The latest it can be done." error={errors.dueDate}>
+                {(a) => <DateField {...a} value={dueDate} onChange={changeDueDate} />}
+              </Field>
+              {dueDate ? (
+                <Field label="Deadline time" help="Optional. Without one: the end of that day." error={errors.dueTime}>
+                  {(a) => <TimeField {...a} value={dueTime} onChange={setDueTime} />}
+                </Field>
+              ) : (
+                <span />
+              )}
+            </div>
+          ) : (
+            <Button variant="ghost" size="sm" className="-ml-3 self-start" onClick={() => setDeadlineOpen(true)}>
+              <PlusIcon />
+              Add a deadline
+            </Button>
+          )}
+
+          {summary && (
+            <div aria-live="polite" className="flex flex-col gap-1 rounded-card bg-ink-well px-3 py-2.5">
+              <span className="font-ui text-[12px] leading-[18px] text-fg-secondary">{summary.text}</span>
+              {summary.warnings.map((w) => (
+                <span key={w} className="font-ui text-[12px] leading-[18px] text-error">
+                  {w}
+                </span>
+              ))}
+            </div>
+          )}
           {errors.form && <p className="m-0 font-ui text-[12px] text-danger">{errors.form}</p>}
           <DialogActions className="justify-between">
-            <Button variant="danger" onClick={() => void remove()}>
-              <TrashIcon />
-              Delete
-            </Button>
+            {task ? (
+              <Button variant="danger" onClick={() => void remove()}>
+                <TrashIcon />
+                Delete
+              </Button>
+            ) : (
+              <span />
+            )}
             <div className="flex gap-2">
               <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
                 Cancel
               </Button>
               <Button type="submit" variant="primary">
-                Save
+                {task ? "Save" : "Add task"}
               </Button>
             </div>
           </DialogActions>
@@ -188,7 +311,7 @@ export function MoveTaskDialog({ task, ...p }: OpenProps & { task: Task }) {
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
       <DialogContent
         title={`Move “${task.title}”`}
-        description={onlyDue ? "Pick a new due day, and a time if it has one." : "Pick a new day, and a time if it has one. A due date moves along."}
+        description={onlyDue ? "Pick a new deadline, and a time if it has one." : "Pick a new day, and a time if it has one. A deadline moves along."}
         width={420}
       >
         <form

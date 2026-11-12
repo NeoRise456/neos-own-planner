@@ -10,7 +10,7 @@ const systemOffset = -new Date().getTimezoneOffset();
 interface UiState {
   /** Todo: days away from today (0 = today). */
   todoDayOffset: number;
-  /** Todo: task open in the side panel. */
+  /** Todo and Calendar: task open in the side panel. */
   openTaskId: string | null;
   /** Todo: only tasks with this tag (null = all). */
   todoTagFilter: string | null;
@@ -19,7 +19,8 @@ interface UiState {
   /** Calendar: weeks away from this week, and the view. */
   calWeekOffset: number;
   calView: "week" | "month";
-  calSelected: string | null;
+  /** Calendar: only tasks with this tag (null = all). */
+  calTagFilter: string | null;
   /** Settings: the time zone "now" is shown in (moves now, never the tasks). */
   utcOffsetMinutes: number;
 
@@ -34,7 +35,7 @@ export const useUi = create<UiState>((set) => ({
   showCancelled: true,
   calWeekOffset: 0,
   calView: "week",
-  calSelected: "d3",
+  calTagFilter: null,
   utcOffsetMinutes: systemOffset,
   set: (patch) => set(patch),
 }));

@@ -13,6 +13,9 @@ apps/desktop/src-tauri/gen/schemas/
 # impeccable keeps its own runtime folders ignored; config stays local
 .impeccable/config.local.json
 
+# Screenshots from manual / agent test runs
+.qa-shots/
+
 # Logs, env, OS, editors
 *.log
 .env

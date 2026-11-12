@@ -5,6 +5,8 @@
  */
 import { format, parseISO } from "date-fns";
 import {
+  validateTask,
+  type LocalDateTime,
   type Clock,
   type LocalDate,
   type Moment,
@@ -56,11 +58,13 @@ function scheduleLabel(task: Task, day: LocalDate): string {
   const kind = taskKind(task);
   const duration = task.duration !== undefined ? formatDuration(task.duration) : null;
   if (kind === "timed") {
+    // The days after its block (due later): like a floating task, "by Fri".
+    if (day !== task.startDate) return [`since ${weekday(task.startDate!)}`, dueLabel(task, day)].filter(Boolean).join(" · ");
     const block = blockOf(task)!;
     const start = splitDateTime(block.start).time;
     const range = block.end ? `${start}–${splitDateTime(block.end).time}` : start;
     if (task.dueDate === undefined) return range;
-    return `${range} · due ${task.dueDate === task.startDate ? (task.dueTime ?? "end of day") : dayShort(task.dueDate)}`;
+    return `${range} · by ${task.dueDate === task.startDate ? (task.dueTime ?? "end of day") : `${dayShort(task.dueDate)}${task.dueTime ? ` ${task.dueTime}` : ""}`}`;
   }
   return [kind === "floating" ? dueLabel(task, day) : null, duration].filter(Boolean).join(" · ");
 }
@@ -120,4 +124,40 @@ export function panelLine(task: Task, clock: Clock): string {
     state === "done" ? doneLabel(task.doneAt!, todayOf(clock)) : state === "cancelled" ? "cancelled" : state === "missed" ? "missed" : null;
   const duration = kind !== "timed" && task.duration !== undefined ? formatDuration(task.duration) : null;
   return [when, duration, status].filter(Boolean).join(" · ");
+}
+
+/**
+ * The task form's summary line: what the task will do, in plain words, as it's filled in
+ * ("Thu 12 Nov, 07:00–10:00 · missed after 10:00"). Every fact comes from @planner/core
+ * (kind, block, when its time runs out, warnings). Null while the fields don't make a valid task.
+ */
+export function formSummary(task: Task): { text: string; warnings: string[] } | null {
+  const check = validateTask(task);
+  if (check.errors.length) return null;
+  const kind = taskKind(task);
+  const firstDay = task.startDate ?? task.dueDate;
+  const at = (dt: LocalDateTime) => {
+    const { date, time } = splitDateTime(dt);
+    return date === firstDay ? time : `${dayShort(date)} ${time}`;
+  };
+  const parts: string[] = [];
+
+  if (kind === "anytime") parts.push("Anytime: shows today until it's done");
+  else if (kind === "timed") {
+    const block = blockOf(task)!;
+    const start = splitDateTime(block.start).time;
+    parts.push(`${dayShort(task.startDate!)}, ${block.end ? `${start}–${splitDateTime(block.end).time}` : `${start} (no end time)`}`);
+    if (task.dueDate !== undefined && task.dueDate > task.startDate!) parts.push(`then during the day until ${dayShort(task.dueDate)}`);
+    else if (task.dueDate !== undefined) parts.push(`deadline ${task.dueTime ?? "end of day"}`);
+  } else {
+    if (task.startDate !== undefined && task.dueDate !== undefined && task.dueDate > task.startDate)
+      parts.push(`${dayShort(task.startDate)} → ${dayShort(task.dueDate)}, during the day`);
+    else if (task.startDate !== undefined) parts.push(`${dayShort(task.startDate)}, during the day`);
+    else parts.push(`From today until ${dayShort(task.dueDate!)}`);
+    if (task.duration !== undefined) parts.push(`${formatDuration(task.duration)} planned`);
+  }
+
+  const out = runsOutAt(task);
+  parts.push(out ? `missed after ${at(out)}` : "never missed");
+  return { text: parts.join(" · "), warnings: check.warnings.map((w) => w.message) };
 }

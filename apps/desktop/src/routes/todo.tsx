@@ -1,13 +1,12 @@
 import { useMemo, useRef, useState, type ReactNode } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { type DaySummary, type Tag, type Task, addDays, daySummary, diffDays, filterTodoDay, formatDuration, todayOf } from "@planner/core";
+import { type DaySummary, type Task, addDays, daySummary, diffDays, filterTodoDay, formatDuration, todayOf } from "@planner/core";
 import { useData, useLive } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { useClock } from "@/lib/clock";
 import { act, useTagMap, useTodoDay } from "@/lib/data-hooks";
 import { viewOf } from "@/lib/task-view";
-import { toneHex, type Tone } from "@/lib/tones";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
 import { EmptyState, Label, Loader, Progress, SectionHeader } from "@/components/ui/bits";
@@ -16,6 +15,7 @@ import { ChevronLeftIcon, ChevronRightIcon } from "@/components/ui/icons";
 import { MonthCalendar } from "@/components/ui/date-picker";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/menu";
 import { TaskPanel, TaskRow } from "@/components/app/todo";
+import { TagFilter, tagsOf } from "@/components/app/tag-filter";
 
 export const Route = createFileRoute("/todo")({ component: TodoPage });
 
@@ -66,13 +66,15 @@ function TodoPage() {
   const { todo: wholeDay, isLoading } = useTodoDay(day, clock);
   const todo = useMemo(() => filterTodoDay(wholeDay, todoTagFilter), [wholeDay, todoTagFilter]);
   // The chips: the tags on this day's tasks (and the chosen one, so it can be turned off).
-  const dayTags = useMemo(() => {
-    const ids = new Set<string>();
-    for (const list of [wholeDay.missed, wholeDay.scheduled, wholeDay.during, wholeDay.anytime, wholeDay.done, wholeDay.cancelled])
-      for (const t of list) for (const id of t.tags) ids.add(id);
-    if (todoTagFilter) ids.add(todoTagFilter);
-    return [...ids].map((id) => tags.get(id)).filter((t): t is Tag => !!t).sort((a, b) => a.name.localeCompare(b.name));
-  }, [wholeDay, todoTagFilter, tags]);
+  const dayTags = useMemo(
+    () =>
+      tagsOf(
+        [wholeDay.missed, wholeDay.scheduled, wholeDay.during, wholeDay.anytime, wholeDay.done, wholeDay.cancelled].flat(),
+        tags,
+        todoTagFilter,
+      ),
+    [wholeDay, todoTagFilter, tags],
+  );
   const filterName = todoTagFilter ? tags.get(todoTagFilter)?.name : undefined;
   const { data: opened } = useLive(repos && openTaskId ? repos.tasks.byId(openTaskId) : null);
   const openTask = opened[0];
@@ -230,35 +232,6 @@ function TodoPage() {
       </main>
       {openTask && <TaskPanel key={openTask.id} task={openTask} tags={tags} />}
     </>
-  );
-}
-
-/**
- * Tag filter — one chip per tag on the day; the chosen one is white (the One White Rule)
- * and shows only its tasks. Clicking it again shows everything.
- */
-function TagFilter({ tags, selected, onSelect }: { tags: Tag[]; selected: string | null; onSelect: (id: string | null) => void }) {
-  return (
-    <div role="group" aria-label="Filter by tag" className="mt-4 flex flex-wrap gap-1.5">
-      {tags.map((t) => {
-        const on = t.id === selected;
-        return (
-          <button
-            key={t.id}
-            type="button"
-            aria-pressed={on}
-            onClick={() => onSelect(on ? null : t.id)}
-            className={cn(
-              "inline-flex h-7 items-center gap-2 rounded-chip px-2.5 font-ui text-[12px] transition-colors duration-[120ms] ease-snap",
-              on ? "bg-fg-white text-black hover:bg-primary-hover" : "bg-ink-fill text-fg-secondary hover:bg-ink-fill-hover hover:text-fg-white",
-            )}
-          >
-            <span aria-hidden className="size-2 rounded-[2px]" style={{ background: toneHex(t.color as Tone) }} />
-            {t.name}
-          </button>
-        );
-      })}
-    </div>
   );
 }
 

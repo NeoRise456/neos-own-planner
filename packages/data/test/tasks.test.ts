@@ -218,3 +218,25 @@ describe("reading a day", () => {
 it("rows map back without empty fields", () => {
   expect(taskFromRow({ id: "a", title: "x", tag_ids: null, duration: null, notes: null })).toEqual({ id: "a", title: "x", tags: [] });
 });
+
+describe("the calendar's range", () => {
+  it("between() finds dated tasks touching the range, never anytime ones", async () => {
+    await repos.tasks.quickAdd("Anytime");
+    await repos.tasks.create({ title: "In range", startDate: "2026-11-10", startTime: "09:00" });
+    await repos.tasks.create({ title: "Due in range", dueDate: "2026-11-15" });
+    await repos.tasks.create({ title: "Spans it", startDate: "2026-11-01", dueDate: "2026-11-30" });
+    await repos.tasks.create({ title: "Only due later", dueDate: "2026-12-20" });
+    await repos.tasks.create({ title: "Last week", startDate: "2026-11-02" });
+    await repos.tasks.create({ title: "Due last week", dueDate: "2026-11-03" });
+    const titles = (await runQuery(db, repos.tasks.between("2026-11-09", "2026-11-15"))).map((t) => t.title);
+    expect(titles).toEqual(["In range", "Due in range", "Spans it", "Only due later"]);
+  });
+
+  it("create() with new tag names makes them in the same write; a refused task makes none", async () => {
+    const t = await repos.tasks.create({ title: "Dentist", startDate: "2026-11-12", startTime: "15:00" }, [{ name: "Health", color: "sea" }]);
+    const health = (await repos.tags.list()).find((x) => x.name === "Health")!;
+    expect(t.tags).toEqual([health.id]);
+    await expectInvalid(repos.tasks.create({ title: " " }, [{ name: "Nope", color: "sea" }]), "title_required");
+    expect((await repos.tags.list()).map((x) => x.name)).toEqual(["Health"]);
+  });
+});

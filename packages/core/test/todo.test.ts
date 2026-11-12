@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Clock, type Task, countProgress, daySummary, filterByTag, filterTodoDay, nextCopyToTick, quickAddFields, showsOn, todoForDay } from "../src";
+import { type Clock, type Task, calendarDay, countProgress, daySummary, filterByTag, filterTodoDay, nextCopyToTick, quickAddFields, showsOn, todoForDay } from "../src";
 
 const now: Clock = { at: "2026-11-11T10:00", offset: 60 };
 const TODAY = "2026-11-11";
@@ -150,5 +150,43 @@ describe("quick-add on a day", () => {
 
   it("with the tag filter on, it gets that tag", () => {
     expect(quickAddFields("Pack", "2026-11-11", "2026-11-11", "trip")).toEqual({ title: "Pack", tags: ["trip"] });
+  });
+});
+
+describe("a timed task due on a later day", () => {
+  // Starts Mon 16 Nov 08:30, deadline Fri 20 Nov (TASK.md, phase 4).
+  const task = t("report", { startDate: "2026-11-16", startTime: "08:30", duration: 60, dueDate: "2026-11-20" });
+  const mon: Clock = { at: "2026-11-16T10:00", offset: 60 };
+  const wed: Clock = { at: "2026-11-18T10:00", offset: 60 };
+
+  it("is its block on its start day, then 'during the day' until the deadline", () => {
+    expect(ids(todoForDay([task], "2026-11-16", mon).scheduled)).toEqual(["report"]);
+    expect(ids(todoForDay([task], "2026-11-18", wed).during)).toEqual(["report"]);
+    expect(ids(todoForDay([task], "2026-11-20", wed).during)).toEqual(["report"]);
+    expect(showsOn(task, "2026-11-21", "2026-11-18")).toBe(false);
+  });
+
+  it("isn't missed before its deadline, and its block only counts on its own day", () => {
+    expect(todoForDay([task], "2026-11-18", wed).missed).toEqual([]);
+    expect(todoForDay([task], "2026-11-16", mon).summary.scheduledMinutes).toBe(60);
+    expect(todoForDay([task], "2026-11-18", wed).summary).toEqual({ scheduledMinutes: 0, floatingMinutes: 0, untimed: 0 });
+  });
+
+  it("done on Wed shows on Wed only", () => {
+    const done = { ...task, doneAt: "2026-11-18T09:00+01:00", loggedAt: "2026-11-18T09:00+01:00" };
+    expect(["2026-11-16", "2026-11-17", "2026-11-18", "2026-11-19"].map((d) => showsOn(done, d, "2026-11-18"))).toEqual([false, false, true, false]);
+  });
+
+  it("on the calendar: block Mon, during Tue–Thu, deadline Fri", () => {
+    const at = (d: string) => {
+      const c = calendarDay([task], d, "2026-11-16");
+      return [c.blocks.length, c.during.length, c.deadlines.length];
+    };
+    expect(["2026-11-16", "2026-11-17", "2026-11-19", "2026-11-20"].map(at)).toEqual([
+      [1, 0, 0],
+      [0, 1, 0],
+      [0, 1, 0],
+      [0, 0, 1],
+    ]);
   });
 });

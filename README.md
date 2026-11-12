@@ -4,7 +4,7 @@ An easy-to-use planner where everything you do is a **task**, and anything in yo
 
 It's an extended todo app. On top of a plain todo list it adds **routines** (the repeating parts of life: classes, exercise, daily habits) and **protocols** (the steps for doing something). Journaling is planned.
 
-> **Status:** early. **Todo works on real data**: one-off tasks are saved on your computer and survive restarts. Calendar, Routines and Protocols are still clickable mock-ups. See [Roadmap](#roadmap).
+> **Status:** early. **Todo and Calendar work on real data**: one-off tasks are saved on your computer and survive restarts. Routines and Protocols are still clickable mock-ups. See [Roadmap](#roadmap).
 
 ## Why
 
@@ -59,7 +59,7 @@ A setting that moves "now": the calendar's now line, which day is today, and whe
 ## Views
 
 - **Todo**: today by default, day by day. Its sections are Missed, Scheduled, During the day and Anytime, plus collapsible Done and Cancelled lists.
-- **Calendar**: week and month. Timed tasks show as blocks, with a "now" line and deadlines marked.
+- **Calendar**: week and month. Timed tasks show as blocks (side by side when they overlap), with a "now" line, deadlines and the tasks that run through the day. Click an empty slot to add a task there.
 - **Routines**: purpose, period, entries and consistency.
 - **Protocols**: the steps, and where each protocol is used.
 - **Settings**: the time zone, list defaults, and your tags (rename, recolor, merge, delete).
@@ -102,7 +102,7 @@ Commands are named `<task>:<app>`, one pair per platform. When web and mobile ex
 | Screen | Try |
 |---|---|
 | **Todo** (real) | quick-add (Enter; on a later day it lands on that day) · tick / untick · click a title → task panel: Done/Undo, Move, Edit (notes, tags, start, due, duration), Cancel (Undo in the toast) · on a done task: **Done → Change** its time · Edit → Delete (Undo in the toast) · tag chips → only that tag's tasks · in the panel or Edit, type in **Tags**: it searches your tags (↑ ↓ + Enter), or ends with *Create “…”* · move a task to yesterday → it shows in **Missed** → tick it → *Done now / on time / Pick a time* · ‹ Today › or click the date to jump to any day · restart the app: everything is still there |
-| **Calendar** (mock) | ‹ Today › weeks · click blocks to select · now line · Week / Month (click a day in Month → its week) |
+| **Calendar** (real) | ‹ Today › weeks · click an empty slot → New task at that time · hover a day's all-day cell → **+** for a task that day · **New task** button · click a block, deadline or row → the task panel (tick, move, edit) · tag chips filter · now line · Week / Month (click a day in Month → its week) |
 | **Routines** (mock) | pick routines in the sidebar · open the draft "Reading habit" → **Publish** · then *Back to draft* or *Delete* (only while nothing is done) · on a running routine: **End today**, Change end date, Duplicate (→ a new draft) · add, edit or remove an entry · New routine (starts as a draft) |
 | **Protocols** (mock) | sidebar groups active / unused / past · add a step (Enter) · hover a step → remove (Undo in the toast) · New protocol · Delete (only unused ones) · in an entry's dialog, search protocols (past ones too) and pick one → it becomes active |
 | **Settings** | time zone (moves the sidebar clock and the calendar now line) · list defaults · **Tags**: rename, recolor, merge (rename to an existing name), delete (Undo), add · link to the component sheet |
@@ -128,7 +128,7 @@ neos-own-planner/
         components/    ui/ (base components) and app/ (sidebar, task row and panel, dialogs)
         stores/        UI state (Zustand)
         lib/           opening the database, the clock, how a task is shown
-        mock/          TEMPORARY demo data for routines, protocols, calendar
+        mock/          TEMPORARY demo data for routines and protocols
         styles/        design tokens + Tailwind CSS 4
       src-tauri/       Rust side (window, icons, permissions, the PowerSync plugin)
 ```
@@ -142,7 +142,7 @@ Desktop first (from [`docs/PLAN.md`](docs/PLAN.md) §14):
 1. **UI on mock data**: the whole desktop UI, clickable ✅
 2. **Core rules**: everything in TASK.md and SYSTEMS.md as tested TypeScript in `packages/core` ✅
 3. **Data layer**: SQLite on the device through the PowerSync Tauri plugin (picked in a storage test, phase 1b), local only; one-off tasks and tags are real ✅
-4. **Todo** on real data, usable day to day ✅ (← we are here), then **Calendar**, then **Routines & Protocols**
+4. **Todo** on real data, usable day to day ✅, then **Calendar** ✅ (← we are here), then **Routines & Protocols**
 5. **Desktop extras**: tray icon, global quick-add shortcut, remembered window position
 6. **Sync & login**: a self-hosted PowerSync server with Postgres and Better Auth
 

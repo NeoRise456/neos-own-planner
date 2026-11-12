@@ -278,6 +278,11 @@ Never the browser's native pickers: they ignore the system (light rounded popups
 - **Time field:** 24-hour, always. A real text box: type "1830", "18:30", "6pm" or "9"; Enter or leaving the field reads it, and text that can't be read stays, with a red border, until it's fixed. ↑ / ↓ move it by 5 minutes. Focusing it opens two scrolling columns (HOUR 00–23, MIN in 5-minute steps, 32px keys) that open centered on the current value, with the same white key for the chosen one; footer "Clear" and "Now".
 - Popovers sit above dialogs, so both work inside forms.
 
+### Task form
+One task, no types: fields show up as they become relevant. Title · Notes · Tags · *Day* → *Start time* (once there's a day) → *End time* (once there's a start time; help "Length 1h 30m"), or *Duration* when there's no start time · a ghost "+ Add a deadline" that opens a hairline-topped row: *Deadline* → *Deadline time* (once there's a deadline day). Clearing a day clears its time.
+- **Summary line** at the bottom, on a `#111` card, UI 12 grey: what the task will do, in plain words, as it's filled in — "Thu 12 Nov, 07:00–10:00 · missed after 10:00", "Mon 16 Nov, 08:30 (no end time) · then during the day until Fri 20 Nov · missed after Fri 20 Nov 23:59", "Anytime: shows today until it's done · never missed". Warnings from the rules show under it in red.
+- The word "due" isn't used in the app: deadlines read "by Fri", "by 09:30".
+
 ### Tag box
 How a task gets tags (edit dialog and task panel). Code: `components/app/tag-box.tsx`.
 - **Look:** the chosen tags as chips above a plain input (36px, UI 13). A tag that is only typed so far (made when the task is saved) has a small grey "new" after its name.
@@ -291,6 +296,15 @@ Each tag is a row: a 32px color swatch (opens the tone picker), the name as an i
 - **Sidebar:** 36px items with icons; the active item is a white pill with black text; counts on the right. Routines and Protocols open a sub-list with a left rail, tone squares, an "Ended" heading and "+ New …".
 - **Sidebar clock:** time in Doto 34px white, date (12px caps) and UTC offset below; the whole block links to Settings.
 - **Title bar:** transparent, drag area plus 46×36 window buttons with thin 1.2-stroke icons (#9A9A9A → white); close hovers in danger colors; icons never change with the window state.
+
+### Calendar (week and month)
+48px per hour, 07:00–21:00 stretched to fit the week's blocks and the current time. Code: `routes/calendar.tsx`; what goes where is `@planner/core` `calendarDay`.
+- **Block states:** not done = tinted tone, white title · done = solid tone, dark text, "· done" · selected = white · missed = faint tint (`.08`/`.30`), grey glyph and title, "· missed" · cancelled = dashed `#3A3A3A` outline, struck grey title. Labels that don't fit end in "…"; the full text is in the tooltip.
+- **No end time:** a marker, not a block: a 2px line at the start (tone at .8, solid tone when done, grey when missed/cancelled, white when selected) with an 18px `#111` label hanging under it: start time, title, a tone tick when done.
+- **Overlap:** blocks that overlap share the column in equal lanes, 2px apart; side by side, the glyph is left out so the title gets the room.
+- **All-day row:** deadline chips first (1px white border, flag, title, due time; grey border and a tick when done; when tight, the time gives way before the title), then "N during the day" and up to 3 rows (tone square + title), then "+N more". A "+" shows on hover to make a task on that day.
+- **Empty slot:** hovering empty space shows a 1px `#2A2A2A` half-hour outline with "+ 09:30"; clicking it opens the New task form there.
+- **Month:** day number (today = white pill), then up to 3 rows (deadline flag, timed with their time, floating), "+N more"; days outside the month at half opacity.
 
 ### Task Row (signature)
 48px, 8px radius, hover `#0F0F0F`: check (20px circle) · Doto glyph in the tone · Figtree title · right-aligned label-type meta. Count tasks show mini squares (8px, filled with the tone when done). Done rows move to a collapsible Done section on `#0A0A0A`. Missed rows go grey ("Missed · Fri 6 Nov") and stay tickable.

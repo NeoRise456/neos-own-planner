@@ -50,20 +50,6 @@ export interface MockProtocol {
   steps: string[];
 }
 
-export interface MockEvent {
-  id: string;
-  /** 0 = Monday … 6 = Sunday */
-  weekday: number;
-  start: number;
-  end: number;
-  title: string;
-  glyph: string;
-  tone: Tone;
-  /** Only in the reference week (one-offs, and what was already done). */
-  refWeekOnly?: boolean;
-  doneInRefWeek?: boolean;
-}
-
 export const ROUTINES: MockRoutine[] = [
   {
     id: "exercise", name: "Exercise plan", glyph: "Ex", tone: "moss", purpose: "Get stronger and have more energy",
@@ -137,26 +123,3 @@ export const PROTOCOLS: MockProtocol[] = [
   // Unused: nothing uses it.
   { id: "packing", title: "Packing list", glyph: "Pa", tone: "sea", used: [], steps: ["Charger", "Water bottle", "Headphones", "Keys"] },
 ];
-
-/** Calendar week (screens/20-calendar-week). Reference week = the week of Mon 9 Nov 2026. */
-export const REF_WEEK_MONDAY = new Date(2026, 10, 9);
-
-export const EVENTS: MockEvent[] = [
-  { id: "m0", weekday: 0, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss", doneInRefWeek: true },
-  { id: "c0", weekday: 0, start: 9, end: 11, title: "Calculus (Mon)", glyph: "Ca", tone: "stone" },
-  { id: "g0", weekday: 0, start: 18, end: 19, title: "Gym", glyph: "Gy", tone: "moss" },
-  { id: "m1", weekday: 1, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-  { id: "p1", weekday: 1, start: 11, end: 13, title: "Physics (Tue)", glyph: "Ph", tone: "sky" },
-  { id: "m2", weekday: 2, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-  { id: "g2", weekday: 2, start: 18, end: 19, title: "Gym", glyph: "Gy", tone: "moss" },
-  { id: "m3", weekday: 3, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-  { id: "d3", weekday: 3, start: 15, end: 16, title: "Dentist", glyph: "De", tone: "sea", refWeekOnly: true },
-  { id: "c3", weekday: 3, start: 16, end: 18, title: "Calculus (Thu)", glyph: "Ca", tone: "stone" },
-  { id: "m4", weekday: 4, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-  { id: "g4", weekday: 4, start: 18, end: 19, title: "Gym", glyph: "Gy", tone: "moss" },
-  { id: "m5", weekday: 5, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-  { id: "m6", weekday: 6, start: 8, end: 8.5, title: "Morning exercise", glyph: "Mo", tone: "moss" },
-];
-
-/** Deadline chip on Friday of the reference week. */
-export const DEADLINE = { weekday: 4, title: "Finish essay", time: "23:59" };

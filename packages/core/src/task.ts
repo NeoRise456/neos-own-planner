@@ -19,6 +19,7 @@ import {
   isMoment,
   momentDate,
   nowMoment,
+  splitDateTime,
   toMoment,
 } from "./dates";
 import { type Check, type Issue, type Result, fail, fromCheck, issue, ok } from "./result";
@@ -165,7 +166,7 @@ export function validateTask(task: Task): Check {
     errors.push(issue("time_without_date", "A start time needs a start date.", "startTime"));
   }
   if (task.dueTime !== undefined && task.dueDate === undefined) {
-    errors.push(issue("time_without_date", "A due time needs a due date.", "dueTime"));
+    errors.push(issue("time_without_date", "A deadline time needs a deadline day.", "dueTime"));
   }
 
   if (task.doneAt !== undefined && task.cancelledAt !== undefined) {
@@ -192,7 +193,13 @@ export function validateTask(task: Task): Check {
   const start = task.startDate !== undefined ? dateTime(task.startDate, task.startTime ?? "00:00") : null;
   const due = dueOf(task);
   if (start !== null && due !== null && due < start && errors.length === 0) {
-    warnings.push(issue("due_before_start", "The due date is before the start.", "dueDate"));
+    warnings.push(issue("due_before_start", "The deadline is before the start.", "dueDate"));
+  }
+  // A deadline inside the block: the task is missed before its block is over.
+  const block = errors.length === 0 ? blockOf(task) : null;
+  if (block?.end && due !== null && due >= block.start && due < block.end) {
+    const at = (dt: string) => (splitDateTime(dt).date === task.startDate ? splitDateTime(dt).time : dt.replace("T", " "));
+    warnings.push(issue("due_before_end", `The deadline (${at(due)}) is before the block ends (${at(block.end)}).`, "dueTime"));
   }
 
   return { errors, warnings };

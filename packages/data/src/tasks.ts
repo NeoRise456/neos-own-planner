@@ -66,14 +66,25 @@ export function taskRepository(db: Db, deps: RepoDeps) {
 
   const change = (id: string, rule: (task: Task) => Result<Task>) => db.writeTransaction((tx) => changeIn(tx, id, rule));
 
-  async function insert(task: Task, createdAt?: string | null): Promise<Task> {
+  async function insertIn(tx: SqlRunner, task: Task, createdAt?: string | null): Promise<Task> {
     const now = deps.nowUtc();
-    await db.writeTransaction((tx) => insertRow(tx, "tasks", task.id, { ...taskColumns(task), created_at: createdAt ?? now, updated_at: now }));
+    await insertRow(tx, "tasks", task.id, { ...taskColumns(task), created_at: createdAt ?? now, updated_at: now });
     return task;
   }
+  const insert = (task: Task, createdAt?: string | null) => db.writeTransaction((tx) => insertIn(tx, task, createdAt));
 
-  /** A new one-off task from the task form. */
-  const create = async (fields: TaskFields): Promise<Task> => insert(unwrap(createTask(deps.newId(), fields)));
+  /**
+   * A new one-off task from the task form. `tags` (optional) replaces `fields.tags`; names
+   * in it become new tags in the same transaction, so a refused task creates no tag.
+   */
+  const create = async (fields: TaskFields, tags?: TagRef[]): Promise<Task> => {
+    if (!tags) return insert(unwrap(createTask(deps.newId(), fields)));
+    return db.writeTransaction(async (tx) => {
+      // Check the task before making any tag (tags can't make it invalid).
+      unwrap(createTask("check", { ...fields, tags: [] }));
+      return insertIn(tx, unwrap(createTask(deps.newId(), { ...fields, tags: await resolveTags(tx, deps, tags) })));
+    });
+  };
 
   return {
     create,
@@ -141,6 +152,24 @@ export function taskRepository(db: Db, deps: RepoDeps) {
                  OR (start_date IS NULL AND due_date IS NOT NULL)
               ORDER BY created_at, id`,
         parameters: [day, day, day],
+        mapper: taskFromRow,
+      };
+    },
+
+    /**
+     * Every task that might show on the calendar from `from` to `to` (inclusive) —
+     * @planner/core's `calendarDay` decides. Dated tasks only: a start or due date in the
+     * range, a range that spans it, or only a due date that hasn't passed before `from`.
+     */
+    between(from: LocalDate, to: LocalDate): LiveQuery<Task> {
+      return {
+        sql: `SELECT * FROM tasks
+              WHERE start_date BETWEEN ? AND ?
+                 OR due_date BETWEEN ? AND ?
+                 OR (start_date < ? AND due_date > ?)
+                 OR (start_date IS NULL AND due_date >= ?)
+              ORDER BY created_at, id`,
+        parameters: [from, to, from, to, from, to, from],
         mapper: taskFromRow,
       };
     },

@@ -39,13 +39,23 @@ export interface DaySummary {
   untimed: number;
 }
 
+/** A timed task due on a later day than it starts (TASK.md, phase 4). */
+export function runsPastStartDay(task: Task): boolean {
+  return taskKind(task) === "timed" && task.dueDate !== undefined && task.dueDate > task.startDate!;
+}
+
 /** Does the task show on `day`? (Missed section aside — see `todoForDay`.) */
 export function showsOn(task: Task, day: LocalDate, today: LocalDate): boolean {
   const closedAt = task.doneAt ?? task.cancelledAt;
   const kind = taskKind(task);
 
   if (kind === "anytime") return closedAt !== undefined ? momentDate(closedAt) === day : day === today;
-  if (kind === "timed") return task.startDate === day;
+  if (kind === "timed") {
+    // Due on a later day: after its block it runs on through the day until the deadline.
+    if (!runsPastStartDay(task)) return task.startDate === day;
+    if (closedAt !== undefined) return clampDate(momentDate(closedAt), task.startDate!, task.dueDate!) === day;
+    return day >= task.startDate! && day <= task.dueDate!;
+  }
 
   const first = task.startDate ?? minDate(today, task.dueDate!);
   const last = task.dueDate !== undefined && task.dueDate > first ? task.dueDate : first;
@@ -69,8 +79,9 @@ export function todoForDay(tasks: Task[], day: LocalDate, now: Clock): TodoDay {
     else if (state === "cancelled") out.cancelled.push(task);
     else {
       const kind = taskKind(task);
-      if (kind === "timed") out.scheduled.push(task);
-      else if (kind === "floating") out.during.push(task);
+      if (kind === "timed" && task.startDate === day) out.scheduled.push(task);
+      // Floating — or a timed task on the days after its block, until its deadline.
+      else if (kind !== "anytime") out.during.push(task);
       else out.anytime.push(task);
     }
   }
@@ -86,7 +97,10 @@ export function todoForDay(tasks: Task[], day: LocalDate, now: Clock): TodoDay {
   out.done.sort((a, b) => momentToEpoch(a.doneAt!) - momentToEpoch(b.doneAt!));
   out.cancelled.sort((a, b) => momentToEpoch(a.cancelledAt!) - momentToEpoch(b.cancelledAt!));
 
-  const planned = [...out.scheduled, ...out.during, ...out.done.filter((t) => taskKind(t) !== "anytime")];
+  // A block counts on its own day only, not on the days it runs on after.
+  const planned = [...out.scheduled, ...out.during, ...out.done.filter((t) => taskKind(t) !== "anytime")].filter(
+    (t) => taskKind(t) !== "timed" || t.startDate === day,
+  );
   return { ...out, summary: daySummary(planned) };
 }
 
