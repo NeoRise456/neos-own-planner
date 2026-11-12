@@ -6,7 +6,8 @@
     "dev:desktop": "pnpm --filter desktop tauri dev",
     "dev:desktop:browser": "pnpm --filter desktop dev",
     "build:desktop": "pnpm --filter desktop tauri build",
-    "check": "pnpm -r --filter \"!neos-own-planner\" --if-present build && pnpm typecheck",
-    "typecheck": "pnpm -r --filter \"!neos-own-planner\" --if-present typecheck"
+    "check": "pnpm -r --filter \"!neos-own-planner\" --if-present build && pnpm typecheck && pnpm test",
+    "typecheck": "pnpm -r --filter \"!neos-own-planner\" --if-present typecheck",
+    "test": "pnpm -r --filter \"!neos-own-planner\" --if-present test"
   }
 }

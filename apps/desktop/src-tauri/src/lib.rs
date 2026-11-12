@@ -1,10 +1,18 @@
-// Tauri core process. No commands yet: the dashboard runs on mock data in the
-// webview. The data layer (SeaORM + SQLite, tauri-specta) arrives in phase 2
-// — see PLAN.md §5–6.
+// Tauri core process: the desktop shell (window, later tray and shortcuts) and the
+// PowerSync plugin, which owns the local SQLite file. Queries and rules stay in
+// TypeScript (packages/data, packages/core) — see PLAN.md §4–7.
+use tauri::Manager;
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
         .plugin(tauri_plugin_opener::init())
+        .plugin(tauri_plugin_powersync::init())
+        .setup(|app| {
+            // The plugin opens the database inside the app data folder but doesn't create it.
+            std::fs::create_dir_all(app.path().app_data_dir()?)?;
+            Ok(())
+        })
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

@@ -38,7 +38,7 @@ An extended todo app that is easy to use and lets you set up recurring tasks for
 - **Protocol**: a shared, ordered list of plain-text steps; a reminder, never run, timed or checked off.
 - **Settings**: time zone (UTC offset), which moves "now", never the tasks' times.
 - Definitions live in `docs/PLAN.md`, `docs/TASK.md` and `docs/SYSTEMS.md`; they win over anything here.
-- Current state: the desktop UI runs on mock data only; rules go in `packages/core`, data in a Rust/SeaORM/SQLite layer (later phases).
+- Current state: the desktop UI runs on mock data only; rules go in `packages/core`, data in SQLite on the device through PowerSync, synced later through a self-hosted server (later phases).
 - **Planned, undecided:** journaling. Its shape and how it relates to tasks are not designed yet; do not invent it.
 - Not now: sync, reminders/notifications, backup/export, priority, subtasks.
 

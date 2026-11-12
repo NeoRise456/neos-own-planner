@@ -1,8 +1,16 @@
 /**
- * @planner/core — ALL the business rules (TASK.md, SYSTEMS.md) will live here:
- * task kinds and states, time-runs-out, routine expansion, consistency…
- *
- * Empty on purpose for now: the desktop app currently only shows the
- * dashboard UI with mock data (apps/desktop/src/mock). Phase 1 fills this in.
+ * @planner/core — ALL the business rules (docs/TASK.md, docs/SYSTEMS.md), as pure
+ * TypeScript: no storage, no UI, no clock of its own ("now" is always passed in).
+ * Shared by every app; the data layer (packages/data) calls it before every write.
  */
-export {};
+export * from "./dates";
+export * from "./duration";
+export * from "./result";
+export * from "./task";
+export * from "./recurrence";
+export * from "./routine";
+export * from "./todo";
+export * from "./protocol";
+export * from "./tag";
+export * from "./settings";
+export * from "./uuid";

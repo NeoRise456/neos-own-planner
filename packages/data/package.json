@@ -1,0 +1,29 @@
+{
+  "name": "@planner/data",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./react": "./src/react.ts"
+  },
+  "dependencies": {
+    "@planner/core": "workspace:*",
+    "@powersync/common": "2.0.0"
+  },
+  "peerDependencies": {
+    "react": "^19"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.1.8",
+    "react": "^19.1.0",
+    "typescript": "~6.0.3",
+    "vitest": "^5.1.0"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  }
+}

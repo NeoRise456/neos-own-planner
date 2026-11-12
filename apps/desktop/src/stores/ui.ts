@@ -1,5 +1,5 @@
 /**
- * UI state (PLAN.md §7: Zustand for "selected day, current view, open panels").
+ * UI state (PLAN.md §8: Zustand for "selected day, current view, open panels").
  * Only what the screen is showing — no data, no rules.
  */
 import { create } from "zustand";
@@ -12,6 +12,8 @@ interface UiState {
   todoDayOffset: number;
   /** Todo: task open in the side panel. */
   openTaskId: string | null;
+  /** Todo: only tasks with this tag (null = all). */
+  todoTagFilter: string | null;
   showDone: boolean;
   showCancelled: boolean;
   /** Calendar: weeks away from this week, and the view. */
@@ -27,6 +29,7 @@ interface UiState {
 export const useUi = create<UiState>((set) => ({
   todoDayOffset: 0,
   openTaskId: null,
+  todoTagFilter: null,
   showDone: true,
   showCancelled: true,
   calWeekOffset: 0,

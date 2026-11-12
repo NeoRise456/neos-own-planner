@@ -189,5 +189,35 @@ The first rule that applies:
 { "title": "Calculus (Mon)", "routine_entry": "Calculus (Mon)", "occurrence_date": "2026-12-08", "cancelled_at": "2026-12-01T10:00" }
 ```
 
+## Decided while building the rules (phase 1)
+
+Details these docs didn't settle, as `packages/core` implements them:
+
+- **Missed starts the minute after** the time runs out: due 09:00 → still in time at 09:00, missed at 09:01. "End of day" = 23:59, so a date-only task is missed from 00:00 the next day.
+- **"Done on time"** = the due moment; with no due date, the start of a timed task; otherwise the end of its day.
+- **A routine copy always stays on a day.** It can be moved to another day or time, but not to "anytime".
+- **Which days a task shows on in Todo:**
+  - timed → its start date;
+  - floating → every day from its start to its due date (only a start: that day; only a due date: from today until the due date), until it's done or cancelled, then only on the day that happened (kept inside its range);
+  - anytime → today while open; once done or cancelled, the day that happened.
+- **The Missed section only exists on today** and only holds **one-off** tasks. On past days, a missed task shows in its normal section, greyed (history).
+- **Day total** counts the day's timed and floating tasks, done ones included (it's the planned time). "+N untimed" = dated tasks with no duration.
+- **"Water 2/4"**: a cancelled copy doesn't count, so 1 done + 1 cancelled of 4 reads 1/3. Ticking the row ticks the first open copy.
+- **Tags** match by name ignoring case and extra spaces: typing "uni" reuses "Uni".
+
+## Decided while building the data layer (phase 2)
+
+- **Moving to a day (and time):** the start goes to the new day/time and a due date **moves along by the same number of days**, keeping its time — "08:00, due 09:00" moved to tomorrow is still due an hour after it starts. No time → it floats on that day. A task with only a due date moves its due date. An anytime task gets the day.
+- **Durations** are typed as `20m`, `1h`, `1h 30m`, `1.5h` or a plain number of minutes, and shown the same way.
+- **A one-off task's color** is its first tag's color; with no tags it's grey (stone). New tags get the next color in turn.
+- **Deleting a one-off is real, with a short undo.** The task is removed from the database at once; the "Task deleted" toast offers Undo for 6 seconds (the timer pauses while the pointer is over the toasts). Undo puts the exact same task back: same id, fields, tags, done/cancelled state and place in the list. Once the toast is gone (or the app closes), it's gone for good: there is no trash.
+- **The time zone setting isn't saved yet**: it starts from the computer's zone at each launch (settings join the database later).
+
+## Decided while building the Todo view (phase 3)
+
+- **Quick-add on another day:** looking at a later day, quick-add puts the task on that day (floating). On today or a past day it makes an anytime task, which shows today.
+- **Tag filter:** one chip per tag on the day; picking one shows only tasks with that tag, in every section, and the day total follows. A task quick-added while the filter is on gets that tag, so it doesn't vanish from view.
+- **History = past days.** Click the date to jump to any day. A done task's panel shows when it was done (editable) and, when different, when it was ticked.
+
 ## Not part of a task (for now)
 Priority, subtasks, reminders, time windows for floating tasks, crossing midnight.

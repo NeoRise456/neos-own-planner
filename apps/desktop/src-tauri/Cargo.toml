@@ -20,6 +20,10 @@ tauri-build = { version = "2", features = [] }
 [dependencies]
 tauri = { version = "2", features = [] }
 tauri-plugin-opener = "2"
+# Local database (PLAN.md §6). Pinned to the crate released with @powersync/tauri-plugin
+# 0.0.6 on npm — they're versioned separately (the crate is ahead) and must match.
+# Upgrade both together, on purpose. Needs LLVM's libclang to build: winget install LLVM.LLVM
+tauri-plugin-powersync = "=0.0.6"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 

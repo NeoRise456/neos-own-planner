@@ -1,36 +1,12 @@
 /**
- * MOCK DATA — copied from the design screens (design/screens/*.dc.html).
+ * MOCK DATA — copied from the design screens (design/screens/*.dc.html), for the
+ * screens not on real data yet: routines, protocols, calendar.
  *
- * These are *view* shapes for the UI (already-worked-out labels like "09:00–11:00"),
- * not the real domain model. When the data layer exists (PLAN.md phase 2),
- * this folder goes away and the screens read from repositories + TanStack Query,
- * with all rules coming from @planner/core.
+ * These are *view* shapes for the UI (already-worked-out labels like "Daily · 08:00"),
+ * not the real domain model. Tasks left this folder in phase 2 (they're in the
+ * database now); routines and protocols follow in phase 5.
  */
 import type { Tone } from "@/lib/tones";
-
-export type TodoSection = "missed" | "scheduled" | "day" | "anytime";
-
-export interface MockTask {
-  id: string;
-  title: string;
-  glyph: string;
-  tone: Tone;
-  section: TodoSection;
-  /** Right-aligned meta: "09:00–11:00", "by 12:00", "Fri 6 Nov"… */
-  meta: string;
-  done: boolean;
-  /** Meta shown once done: "done 08:52". */
-  doneMeta?: string;
-  cancelled: boolean;
-  /** Count tasks ("Water ×4"): copies done / total. */
-  count?: { done: number; of: number };
-  /** Routine name, or "One-off". */
-  group: string;
-  routineId?: string;
-  protocolId?: string;
-  duration?: string;
-  notes?: string;
-}
 
 export interface MockEntry {
   id: string;
@@ -41,6 +17,8 @@ export interface MockEntry {
   /** One char per recent occurrence: d = done, m = missed. */
   seq: string;
   score: string;
+  /** The protocol its tasks get (kept in sync with MockProtocol.used). */
+  protocolId?: string;
 }
 
 export interface MockRoutine {
@@ -51,6 +29,8 @@ export interface MockRoutine {
   purpose: string;
   period: string;
   status: string;
+  /** Not published yet: no tasks, edit freely (SYSTEMS.md "Draft → publish"). */
+  draft?: boolean;
   ended?: boolean;
   pct: number;
   pctLabel: string;
@@ -62,7 +42,11 @@ export interface MockProtocol {
   title: string;
   glyph: string;
   tone: Tone;
-  used: { label: string; kind: string; tone: Tone; routineId: string }[];
+  /**
+   * Where routines use it: `label` = the entry, `kind` = the routine. `past` = only an
+   * older version used it (history). The status comes from the routines — see protocolStatusOf.
+   */
+  used: { label: string; kind: string; tone: Tone; routineId: string; entryId: string; past?: boolean }[];
   steps: string[];
 }
 
@@ -80,46 +64,20 @@ export interface MockEvent {
   doneInRefWeek?: boolean;
 }
 
-export const TASKS: MockTask[] = [
-  { id: "a", title: "Reply to email", glyph: "Re", tone: "lilac", section: "missed", meta: "Fri 6 Nov", done: false, cancelled: false, group: "One-off", duration: "5m" },
-  { id: "b", title: "Morning exercise", glyph: "Mo", tone: "moss", section: "scheduled", meta: "08:00 · due 09:00", done: true, doneMeta: "done 08:52", cancelled: false, group: "Exercise plan", routineId: "exercise" },
-  { id: "c", title: "Calculus (Mon)", glyph: "Ca", tone: "stone", section: "scheduled", meta: "09:00–11:00", done: false, cancelled: false, group: "Uni — Term 1", routineId: "uni", duration: "2h" },
-  { id: "d", title: "Gym", glyph: "Gy", tone: "moss", section: "scheduled", meta: "18:00–19:00", done: false, cancelled: false, group: "Exercise plan", routineId: "exercise", protocolId: "gym", duration: "1h", notes: "Leg day on Fri" },
-  { id: "e", title: "Vitamins", glyph: "Vi", tone: "sand", section: "day", meta: "by 12:00", done: false, cancelled: false, group: "Morning routine", routineId: "morning" },
-  { id: "f", title: "Water", glyph: "Wa", tone: "rose", section: "day", meta: "", done: false, cancelled: false, count: { done: 2, of: 4 }, group: "Morning routine", routineId: "morning" },
-  { id: "g", title: "Shower", glyph: "Sh", tone: "sand", section: "day", meta: "20m", done: false, cancelled: false, group: "Morning routine", routineId: "morning", protocolId: "shower", duration: "20m" },
-  { id: "h", title: "Call mom", glyph: "Ca", tone: "rose", section: "day", meta: "by Sun", done: false, cancelled: false, group: "One-off" },
-  { id: "i", title: "Buy milk", glyph: "Bu", tone: "sea", section: "anytime", meta: "", done: false, cancelled: false, group: "One-off" },
-];
-
-export const SECTION_NAMES: Record<TodoSection, string> = {
-  missed: "Missed",
-  scheduled: "Scheduled",
-  day: "During the day",
-  anytime: "Anytime",
-};
-export const SECTION_NOTES: Record<TodoSection, string> = {
-  missed: "still tickable",
-  scheduled: "3h",
-  day: "20m + 4 untimed",
-  anytime: "no date",
-};
-export const DAY_SUMMARY = "Scheduled 3h · During the day 20m · +4 untimed";
-
 export const ROUTINES: MockRoutine[] = [
   {
     id: "exercise", name: "Exercise plan", glyph: "Ex", tone: "moss", purpose: "Get stronger and have more energy",
     period: "Sep 1 → Nov 30", status: "Active · 21 days left", pct: 91, pctLabel: "10 of 11 done in November",
     entries: [
       { id: "e1", title: "Morning exercise", glyph: "Mo", rule: "Daily · 08:00 · due 09:00", seq: "dddddmdd", score: "7/8" },
-      { id: "e2", title: "Gym", glyph: "Gy", rule: "Mon, Wed, Fri · 18:00 · 1h · Gym warm-up", seq: "ddd", score: "3/3" },
+      { id: "e2", title: "Gym", glyph: "Gy", rule: "Mon, Wed, Fri · 18:00 · 1h · Gym warm-up", seq: "ddd", score: "3/3", protocolId: "gym" },
     ],
   },
   {
     id: "morning", name: "Morning routine", glyph: "Mo", tone: "sand", purpose: "Start the day ready",
     period: "Nov 1 → Jan 31", status: "Active · 83 days left", pct: 85, pctLabel: "41 of 48 done in November",
     entries: [
-      { id: "e3", title: "Shower", glyph: "Sh", rule: "Daily · 20m · Shower", seq: "dddddddd", score: "8/8" },
+      { id: "e3", title: "Shower", glyph: "Sh", rule: "Daily · 20m · Shower", seq: "dddddddd", score: "8/8", protocolId: "shower" },
       { id: "e4", title: "Vitamins", glyph: "Vi", rule: "Daily · by 12:00", seq: "ddmddddd", score: "7/8" },
       { id: "e5", title: "Water", glyph: "Wa", rule: "Daily · 4 times", seq: "ddmdddmd", score: "26/32", tone: "rose" },
     ],
@@ -134,10 +92,17 @@ export const ROUTINES: MockRoutine[] = [
     ],
   },
   {
+    id: "reading", name: "Reading habit", glyph: "Re", tone: "lilac", purpose: "Read more, scroll less",
+    period: "Nov 9 → Feb 28", status: "Draft", draft: true, pct: 0, pctLabel: "",
+    entries: [
+      { id: "e11", title: "Read", glyph: "Re", rule: "Daily · 20m · Wind down", seq: "", score: "", protocolId: "wind-down" },
+    ],
+  },
+  {
     id: "spring", name: "Exercise — spring", glyph: "Ex", tone: "moss", purpose: "Get back in shape",
     period: "Mar 1 → May 31", status: "Ended", ended: true, pct: 71, pctLabel: "64 of 90 done over the whole period",
     entries: [
-      { id: "e9", title: "Morning exercise", glyph: "Mo", rule: "Daily · 08:00 · due 09:00", seq: "ddmdmddmddmdddmd", score: "41/62" },
+      { id: "e9", title: "Morning exercise", glyph: "Mo", rule: "Daily · 08:00 · due 09:00 · Spring stretch", seq: "ddmdmddmddmdddmd", score: "41/62", protocolId: "stretch" },
       { id: "e10", title: "Gym", glyph: "Gy", rule: "Mon, Wed, Fri · 18:00 · 1h · Gym warm-up", seq: "dddmddddmddd", score: "23/28" },
     ],
   },
@@ -163,8 +128,14 @@ const SHOWER_STEPS = [
 ];
 
 export const PROTOCOLS: MockProtocol[] = [
-  { id: "shower", title: "Shower", glyph: "Sh", tone: "sand", used: [{ label: "Shower", kind: "Morning routine", tone: "sand", routineId: "morning" }], steps: SHOWER_STEPS },
-  { id: "gym", title: "Gym warm-up", glyph: "Gy", tone: "moss", used: [{ label: "Gym", kind: "Exercise plan", tone: "moss", routineId: "exercise" }], steps: ["5 min easy bike", "Hip circles and leg swings", "Empty bar, 2 × 10", "One light set per lift"] },
+  { id: "shower", title: "Shower", glyph: "Sh", tone: "sand", used: [{ label: "Shower", kind: "Morning routine", tone: "sand", routineId: "morning", entryId: "e3" }], steps: SHOWER_STEPS },
+  { id: "gym", title: "Gym warm-up", glyph: "Gy", tone: "moss", used: [{ label: "Gym", kind: "Exercise plan", tone: "moss", routineId: "exercise", entryId: "e2" }], steps: ["5 min easy bike", "Hip circles and leg swings", "Empty bar, 2 × 10", "One light set per lift"] },
+  // Past: only the ended "Exercise — spring" used it.
+  { id: "stretch", title: "Spring stretch", glyph: "St", tone: "moss", used: [{ label: "Morning exercise", kind: "Exercise — spring", tone: "moss", routineId: "spring", entryId: "e9" }], steps: ["Neck rolls", "Shoulder circles", "Hamstrings, 30 s each side", "Hip flexors, 30 s each side"] },
+  // Unused: only the draft "Reading habit" uses it (drafts don't count).
+  { id: "wind-down", title: "Wind down", glyph: "Wi", tone: "lilac", used: [{ label: "Read", kind: "Reading habit", tone: "lilac", routineId: "reading", entryId: "e11" }], steps: ["Phone on the charger, out of reach", "Dim the lights", "Pick up the book"] },
+  // Unused: nothing uses it.
+  { id: "packing", title: "Packing list", glyph: "Pa", tone: "sea", used: [], steps: ["Charger", "Water bottle", "Headphones", "Keys"] },
 ];
 
 /** Calendar week (screens/20-calendar-week). Reference week = the week of Mon 9 Nov 2026. */

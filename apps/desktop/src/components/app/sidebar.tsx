@@ -3,8 +3,12 @@ import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { cn } from "@/lib/cn";
 import { toneHex } from "@/lib/tones";
 import { useNow } from "@/lib/use-now";
+import { todayOf } from "@planner/core";
+import { useClock } from "@/lib/clock";
+import { useTodoDay } from "@/lib/data-hooks";
 import { formatOffset, useUi } from "@/stores/ui";
-import { useMock } from "@/mock/store";
+import { protocolStatusOf, useMock } from "@/mock/store";
+import type { MockProtocol } from "@/mock/data";
 import { DotLogo } from "@/components/ui/bits";
 import {
   CalendarIcon,
@@ -23,16 +27,21 @@ import { NewProtocolDialog, NewRoutineDialog } from "./dialogs";
  */
 export function Sidebar() {
   const path = useRouterState({ select: (s) => s.location.pathname });
-  const tasks = useMock((s) => s.tasks);
+  const clock = useClock();
+  const { todo } = useTodoDay(todayOf(clock), clock);
   const routines = useMock((s) => s.routines);
   const protocols = useMock((s) => s.protocols);
   const navigate = useNavigate();
   const [newRoutine, setNewRoutine] = useState(false);
   const [newProtocol, setNewProtocol] = useState(false);
 
-  const openCount = tasks.filter((t) => !t.done && !t.cancelled).length;
-  const active = routines.filter((r) => !r.ended);
+  const openCount = todo.missed.length + todo.scheduled.length + todo.during.length + todo.anytime.length;
+  const active = routines.filter((r) => !r.ended && !r.draft);
+  const drafts = routines.filter((r) => r.draft);
   const ended = routines.filter((r) => r.ended);
+  // Protocols by status (SYSTEMS.md "Protocol status"): active, then unused, then past.
+  const protocolGroups = { active: [] as MockProtocol[], unused: [] as MockProtocol[], past: [] as MockProtocol[] };
+  for (const p of protocols) protocolGroups[protocolStatusOf(p, routines).status].push(p);
 
   const on = (p: string) => path === p || path.startsWith(`${p}/`);
 
@@ -58,9 +67,13 @@ export function Sidebar() {
               {r.name}
             </SubItem>
           ))}
-          {ended.length > 0 && (
-            <span className="px-2 pt-3 pb-1 text-[11px] tracking-[.08em] text-fg-label uppercase">Ended</span>
-          )}
+          {drafts.length > 0 && <GroupHeading>Drafts</GroupHeading>}
+          {drafts.map((r) => (
+            <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone={toneHex(r.tone)} hollow current={path === `/routines/${r.id}`}>
+              {r.name}
+            </SubItem>
+          ))}
+          {ended.length > 0 && <GroupHeading>Ended</GroupHeading>}
           {ended.map((r) => (
             <SubItem key={r.id} to="/routines/$routineId" params={{ routineId: r.id }} tone="#3A3A3A" dim current={path === `/routines/${r.id}`}>
               {r.name}
@@ -69,11 +82,23 @@ export function Sidebar() {
           <NewItem onClick={() => setNewRoutine(true)}>New routine</NewItem>
         </SubList>
       )}
-      <NavItem to="/protocols" icon={<ProtocolsIcon />} label="Protocols" badge={String(protocols.length)} active={on("/protocols")} />
+      <NavItem to="/protocols" icon={<ProtocolsIcon />} label="Protocols" badge={String(protocolGroups.active.length)} active={on("/protocols")} />
       {on("/protocols") && (
         <SubList>
-          {protocols.map((p) => (
+          {protocolGroups.active.map((p) => (
             <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone={toneHex(p.tone)} current={path === `/protocols/${p.id}`}>
+              {p.title}
+            </SubItem>
+          ))}
+          {protocolGroups.unused.length > 0 && <GroupHeading>Unused</GroupHeading>}
+          {protocolGroups.unused.map((p) => (
+            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone={toneHex(p.tone)} hollow current={path === `/protocols/${p.id}`}>
+              {p.title}
+            </SubItem>
+          ))}
+          {protocolGroups.past.length > 0 && <GroupHeading>Past</GroupHeading>}
+          {protocolGroups.past.map((p) => (
+            <SubItem key={p.id} to="/protocols/$protocolId" params={{ protocolId: p.id }} tone="#3A3A3A" dim current={path === `/protocols/${p.id}`}>
               {p.title}
             </SubItem>
           ))}
@@ -145,12 +170,17 @@ function SubList({ children }: { children: ReactNode }) {
   return <div className="ml-[15px] flex flex-col gap-px border-l border-ink-line-mid pt-1.5 pb-3 pl-[14px]">{children}</div>;
 }
 
+function GroupHeading({ children }: { children: ReactNode }) {
+  return <span className="px-2 pt-3 pb-1 text-[11px] tracking-[.08em] text-fg-label uppercase">{children}</span>;
+}
+
 function SubItem({
   to,
   params,
   tone,
   current,
   dim,
+  hollow,
   children,
 }: {
   to: "/routines/$routineId" | "/protocols/$protocolId";
@@ -158,6 +188,8 @@ function SubItem({
   tone: string;
   current: boolean;
   dim?: boolean;
+  /** Drafts / unused protocols: an outlined square — not live. */
+  hollow?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -170,7 +202,11 @@ function SubItem({
         current ? "bg-ink-fill font-semibold text-fg-white" : dim ? "text-fg-label hover:text-fg-secondary" : "text-fg-secondary hover:bg-ink-line-faint hover:text-fg-white",
       )}
     >
-      <span aria-hidden className="size-2 shrink-0 rounded-[2px]" style={{ background: tone }} />
+      <span
+        aria-hidden
+        className="box-border size-2 shrink-0 rounded-[2px]"
+        style={hollow ? { border: `1.5px solid ${tone}` } : { background: tone }}
+      />
       <span className="truncate">{children}</span>
     </Link>
   );

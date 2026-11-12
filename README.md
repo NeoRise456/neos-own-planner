@@ -4,7 +4,7 @@ An easy-to-use planner where everything you do is a **task**, and anything in yo
 
 It's an extended todo app. On top of a plain todo list it adds **routines** (the repeating parts of life: classes, exercise, daily habits) and **protocols** (the steps for doing something). Journaling is planned.
 
-> **Status:** early. The desktop UI is built and clickable, but it runs on mock data: nothing is saved yet and the product rules aren't implemented. See [Roadmap](#roadmap).
+> **Status:** early. **Todo works on real data**: one-off tasks are saved on your computer and survive restarts. Calendar, Routines and Protocols are still clickable mock-ups. See [Roadmap](#roadmap).
 
 ## Why
 
@@ -37,7 +37,8 @@ A container with a **purpose** ("Get stronger and have more energy") and a fixed
 
 Examples: "Exercise plan", "Morning routine", "Uni — Term 1".
 
-- You **end** a routine to stop it, which keeps its history. You **duplicate** it to start again.
+- A new routine is a **draft**: set it up freely, nothing shows yet. **Publish** it and its tasks start from that day.
+- You **end** a routine to stop it, which keeps its history. You **duplicate** it (into a new draft) to start again.
 - It tracks one number, **consistency** = done ÷ (done + missed).
 
 ### Routine entry: the blueprint
@@ -50,7 +51,7 @@ An entry produces **one task per occurrence**. Changes to an entry apply from to
 → [`docs/SYSTEMS.md`](docs/SYSTEMS.md)
 
 ### Protocol: how to do it
-An ordered list of plain-text steps ("Shower": 16 steps). One protocol can be shared by many tasks and entries. It's just a reminder: the app doesn't time it or check steps off.
+An ordered list of plain-text steps ("Shower": 16 steps). One protocol can be shared by many tasks and entries. It's just a reminder: the app doesn't time it or check steps off. It's **active** while a running routine uses it, **past** once only finished routines did, and **unused** otherwise. Past ones can be searched and used again; only unused ones can be deleted.
 
 ### Time zone
 A setting that moves "now": the calendar's now line, which day is today, and when time runs out. It never changes the times you gave your tasks.
@@ -71,6 +72,7 @@ This is a **pnpm monorepo**, built so that desktop, web and mobile can share the
 - [Node.js](https://nodejs.org) LTS and [pnpm](https://pnpm.io) 10 (`npm i -g pnpm`)
 - [Rust](https://rustup.rs) (stable, via rustup)
 - [Microsoft C++ Build Tools](https://visualstudio.microsoft.com/visual-cpp-build-tools/), with the "Desktop development with C++" workload
+- [LLVM](https://github.com/llvm/llvm-project/releases) (`winget install LLVM.LLVM`): the PowerSync plugin needs its `libclang` to build
 - WebView2 (already part of Windows 10/11)
 
 See Tauri's [prerequisites guide](https://v2.tauri.app/start/prerequisites/) if anything is missing.
@@ -90,22 +92,23 @@ The first `pnpm dev` compiles the Rust side and takes a few minutes; after that 
 | `pnpm dev:desktop` | The desktop app in its own window (Tauri) |
 | `pnpm dev:desktop:browser` | The same UI in a browser, without Tauri: http://localhost:1420 (no window buttons) |
 | `pnpm build:desktop` | Windows installer (`.msi` / `.exe`) in `apps/desktop/src-tauri/target/release/bundle` |
-| `pnpm check` | Build every app and type-check every package |
+| `pnpm test` | Run every package's tests (the rules in `packages/core`, the repositories in `packages/data`) |
+| `pnpm check` | Build every app, type-check every package and run the tests |
 
 Commands are named `<task>:<app>`, one pair per platform. When web and mobile exist they'll get `dev:web` / `build:web` and `dev:mobile` / `build:mobile`.
 
-### What to try (all mock data)
+### What to try
 
 | Screen | Try |
 |---|---|
-| **Todo** | tick / untick · Water ticks one copy at a time (2/4 → 3/4 → done) · tick the missed task → *Done now / on time / Pick a time* · click a title → task panel (Done/Undo, Move, Edit, Cancel, protocol steps, routine link) · quick-add (Enter) · ‹ Today › (other days are empty) |
-| **Calendar** | ‹ Today › weeks · click blocks to select · now line · Week / Month (click a day in Month → its week) |
-| **Routines** | pick routines in the sidebar · add or click an entry · Edit · Change end date · Duplicate · Delete (with warning) · New routine |
-| **Protocols** | pick in the sidebar · add a step (Enter) · hover a step → remove (Undo in the toast) · New protocol |
+| **Todo** (real) | quick-add (Enter; on a later day it lands on that day) · tick / untick · click a title → task panel: Done/Undo, Move, Edit (notes, tags, start, due, duration), Cancel (Undo in the toast) · on a done task: **Done → Change** its time · Edit → Delete (Undo in the toast) · tag chips → only that tag's tasks · move a task to yesterday → it shows in **Missed** → tick it → *Done now / on time / Pick a time* · ‹ Today › or click the date to jump to any day · restart the app: everything is still there |
+| **Calendar** (mock) | ‹ Today › weeks · click blocks to select · now line · Week / Month (click a day in Month → its week) |
+| **Routines** (mock) | pick routines in the sidebar · open the draft "Reading habit" → **Publish** · then *Back to draft* or *Delete* (only while nothing is done) · on a running routine: **End today**, Change end date, Duplicate (→ a new draft) · add, edit or remove an entry · New routine (starts as a draft) |
+| **Protocols** (mock) | sidebar groups active / unused / past · add a step (Enter) · hover a step → remove (Undo in the toast) · New protocol · Delete (only unused ones) · in an entry's dialog, search protocols (past ones too) and pick one → it becomes active |
 | **Settings** | time zone (moves the sidebar clock and the calendar now line) · list defaults · link to the component sheet |
 | **/components** | every base component, clickable |
 
-Restarting resets everything; there is no storage yet.
+Tasks and tags are saved in a SQLite file: `%APPDATA%\com.neo.planner\planner-dev.db` while developing, `planner.db` in the installed app (separate, so testing never touches your real tasks). Nothing leaves your computer. The mock screens reset when you restart.
 
 ## Project structure
 
@@ -116,28 +119,31 @@ neos-own-planner/
   PRODUCT.md           product summary for design reviews
   DESIGN.md            the design system as built
   packages/
-    core/              the business rules, shared by every app (empty for now)
+    core/              the business rules, shared by every app (tested with Vitest)
+    data/              the database schema and repositories (PowerSync), shared by every app
   apps/
     desktop/           Tauri 2 + React + TypeScript + Vite
       src/
         routes/        TanStack Router pages: todo, calendar, routines, protocols, settings
         components/    ui/ (base components) and app/ (sidebar, task row and panel, dialogs)
         stores/        UI state (Zustand)
-        mock/          TEMPORARY demo data and in-memory store
+        lib/           opening the database, the clock, how a task is shown
+        mock/          TEMPORARY demo data for routines, protocols, calendar
         styles/        design tokens + Tailwind CSS 4
-      src-tauri/       Rust side (window, icons, permissions; no commands yet)
+      src-tauri/       Rust side (window, icons, permissions, the PowerSync plugin)
 ```
 
-**Stack:** Tauri 2 (Rust + WebView2), React 19, TypeScript, Vite, TanStack Router, Tailwind CSS 4, Radix UI, Zustand, date-fns. Later: SQLite through SeaORM.
+**Stack:** Tauri 2 (Rust + WebView2), React 19, TypeScript, Vite, TanStack Router, Tailwind CSS 4, Radix UI, Zustand, date-fns. Next: SQLite on the device through the PowerSync Tauri plugin; later, sync through a self-hosted PowerSync server with Postgres and Better Auth ([`docs/PLAN.md`](docs/PLAN.md) §6–7).
 
 ## Roadmap
 
-Desktop first (from [`docs/PLAN.md`](docs/PLAN.md) §13):
+Desktop first (from [`docs/PLAN.md`](docs/PLAN.md) §14):
 
-1. **UI on mock data**: the whole desktop UI, clickable (← we are here)
-2. **Core rules**: everything in TASK.md and SYSTEMS.md as tested TypeScript in `packages/core`
-3. **Data layer**: SQLite + SeaORM in Rust, so tasks survive a restart
-4. **Todo**, then **Calendar**, then **Routines & Protocols** on real data
+1. **UI on mock data**: the whole desktop UI, clickable ✅
+2. **Core rules**: everything in TASK.md and SYSTEMS.md as tested TypeScript in `packages/core` ✅
+3. **Data layer**: SQLite on the device through the PowerSync Tauri plugin (picked in a storage test, phase 1b), local only; one-off tasks and tags are real ✅
+4. **Todo** on real data, usable day to day ✅ (← we are here), then **Calendar**, then **Routines & Protocols**
 5. **Desktop extras**: tray icon, global quick-add shortcut, remembered window position
+6. **Sync & login**: a self-hosted PowerSync server with Postgres and Better Auth
 
-Later: journaling, sync and login, then Android and web.
+Later: journaling, then Android and web (sharing the same rules and data code).

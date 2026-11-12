@@ -13,6 +13,7 @@ Product docs live in `docs/`: `docs/PLAN.md` (architecture), `docs/TASK.md`, `do
 - The one clock is in the sidebar footer (`SidebarClock` in `components/app/sidebar.tsx`): time in Doto 34px, date, UTC offset; click → Settings.
 - Right-hand panels render through `<SidePanel>` (`components/app/side-panel.tsx`) into a slot in the shell, so they run the full window height and their color reaches the top edge. Give them a 36px top spacer and scroll their own content.
 - Scrollbars: square, no arrows, #3A3A3A thumb (#6B6B6B on hover). Only `::-webkit-scrollbar` rules — never `scrollbar-width`/`scrollbar-color`.
+- Approved: **own date & time fields** (`components/ui/date-picker.tsx` → `DateField`, `time-picker.tsx` → `TimeField`; DESIGN.md "Date & time fields"). Never `<input type="date|time|datetime-local">`. Values are core's text (`YYYY-MM-DD`, `HH:MM`, `""` = none); typed times are read by core's `parseTimeInput`.
 - Approved: **empty states have no dashed box** (it read as a drop zone). Use `EmptyState` from `components/ui/bits.tsx`: dim glyph tile, heading, one line of help, actions. Dashed borders are only for real drop zones.
 
 - Approved: **16 tones + custom colors.** The design's 8 tones plus 8 extra pastel presets (`lib/tones.ts`, `tokens.css`), and a routine can use any custom hex from the picker. A `Tone` is a preset name or `"#RRGGBB"`; always go through `toneHex()` / `tint()`. Custom colors darker than luminance 0.3 get a readability warning (dark text sits on filled tiles).
@@ -22,7 +23,10 @@ Product docs live in `docs/`: `docs/PLAN.md` (architecture), `docs/TASK.md`, `do
 - **design-taste-frontend** setup, audit command, the rules this project overrides, and the baseline findings: `.taste-skill/README.md` (baseline screenshots in `.taste-skill/before/`).
 
 ## Current state
-- `apps/desktop` shows the dashboard on **mock data** (`src/mock/`): interactive, nothing saved, no rules.
-- `packages/core` is empty on purpose — all business rules go there (phase 1).
-- `src-tauri` has no commands yet — the SeaORM data layer comes in phase 2.
-- Don't put business rules in components or in `src/mock/`; they belong in `@planner/core`.
+- `apps/desktop`: **Todo is on real data** (phase 2, done): one-off tasks + tags in the local database. Calendar, Routines and Protocols still run on **mock data** (`src/mock/`) until phases 4–5.
+- `packages/core` holds all the business rules (phase 1, done): pure TS, no storage, "now" always passed in as a `Clock`. Dates/times are plain text (`dates.ts`), never `Date` objects. Every rule has a test (`pnpm test`); decisions beyond the docs are listed at the end of TASK.md / SYSTEMS.md.
+- Data layer (phase 2) = **PowerSync** in TypeScript (`packages/data`), local only first; sync later through a self-hosted PowerSync server (PLAN.md §6–7). On desktop the database is the **PowerSync Tauri plugin** (alpha): `@powersync/tauri-plugin` 0.0.6 + crate `tauri-plugin-powersync =0.0.6`, **pinned together** — upgrade both on purpose. Building needs **LLVM** (libclang). Rust creates the app data folder at startup (the plugin doesn't). No business rules in Rust; queries stay in TS.
+- `packages/data`: the schema (`schema.ts`), repositories (`tasks.ts`, `tags.ts`) and `useLive` (`react.ts`). Reads are `LiveQuery` objects (SQL + mapper); writes load → ask core → update **only changed columns**. No ORM; tests run on `node:sqlite` (`test/sqlite.ts`). `@powersync/common` is pinned to **2.0.0** to match the plugin — don't add `@powersync/react` / drizzle / kysely drivers (they need ≥ 2.5).
+- Trying things without touching your tasks: `VITE_DB_FILE=planner-test.db pnpm dev` uses another file in the same folder (dev only); delete it afterwards.
+- Desktop data flow: `main.tsx` opens the DB (`lib/db.ts`) before rendering → `DataProvider`; screens use `useLive(repos.tasks…)`, `useTodoDay`, `useTagMap`, and run writes through `act()` (`lib/data-hooks.ts`), which toasts refusals. "Now" = `useClock()` / `currentClock()` (`lib/clock.ts`). Labels/colors of a task: `lib/task-view.ts` (display only).
+- Don't put business rules in components or in `src/mock/`; they belong in `@planner/core`. The mock's `protocolStatusOf` / draft flags are stand-ins until phase 5. Task forms can't pick a protocol until protocols are real (phase 5).

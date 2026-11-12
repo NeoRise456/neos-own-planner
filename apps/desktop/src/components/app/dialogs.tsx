@@ -1,21 +1,24 @@
 /**
- * Dialogs for the flows the design references but doesn't draw
- * (new routine, edit task, routine entry…). Built only from the design's
- * components: fields, choice cards, radio rows, step headings, buttons.
- * They write to the MOCK store — no validation rules beyond "title required".
+ * Dialogs for the flows the design references but doesn't draw (new routine,
+ * routine entry…). Built only from the design's components: fields, choice cards,
+ * radio rows, step headings, buttons. They write to the MOCK store (routines and
+ * protocols until phase 5). The task dialogs are on real data: task-dialogs.tsx.
  */
 import { useEffect, useState, type FormEvent } from "react";
 import { format, parseISO } from "date-fns";
 import { cn } from "@/lib/cn";
 import { isCustomTone, luminance, TONE_NAMES, toneHex, type Tone } from "@/lib/tones";
-import { glyphOf, useMock } from "@/mock/store";
-import type { MockEntry, MockRoutine, MockTask } from "@/mock/data";
+import { glyphOf } from "@/lib/glyph";
+import { useMock } from "@/mock/store";
+import type { MockEntry, MockRoutine } from "@/mock/data";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogActions, DialogContent } from "@/components/ui/dialog";
-import { Field, Input, Select, Textarea } from "@/components/ui/field";
+import { Field, Input } from "@/components/ui/field";
+import { DateField } from "@/components/ui/date-picker";
 import { ChoiceCard, ChoiceGroup, RadioRow, StepHeading } from "@/components/ui/choice";
 import { TrashIcon } from "@/components/ui/icons";
 import { toast } from "@/components/ui/toast";
+import { ProtocolPicker } from "./protocol-picker";
 
 type OpenProps = { open: boolean; onOpenChange: (o: boolean) => void };
 
@@ -126,12 +129,15 @@ export function NewRoutineDialog({ open, onOpenChange, onCreated }: OpenProps & 
     const id = addRoutine({ name: name.trim(), purpose: purpose.trim(), period: `${fmtDay(start)} → ${fmtDay(end)}`, tone });
     onOpenChange(false);
     onCreated(id);
-    toast("Routine created.");
+    toast("Draft created. Add entries, then publish it.");
   }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title="New routine" description="Every routine ends. You can start it empty and add entries after.">
+      <DialogContent
+        title="New routine"
+        description="It starts as a draft: nothing shows in Todo or Calendar until you publish it. Every routine ends."
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field label="Title" error={error}>
             {(a) => <Input {...a} kind="title" autoFocus placeholder="Exercise plan" value={name} onChange={(e) => setName(e.target.value)} />}
@@ -140,8 +146,8 @@ export function NewRoutineDialog({ open, onOpenChange, onCreated }: OpenProps & 
             {(a) => <Input {...a} placeholder="Get stronger and have more energy" value={purpose} onChange={(e) => setPurpose(e.target.value)} />}
           </Field>
           <div className="grid grid-cols-2 gap-3">
-            <Field label="Starts">{(a) => <Input {...a} type="date" value={start} onChange={(e) => setStart(e.target.value)} />}</Field>
-            <Field label="Ends">{(a) => <Input {...a} type="date" required value={end} onChange={(e) => setEnd(e.target.value)} />}</Field>
+            <Field label="Starts">{(a) => <DateField {...a} value={start} onChange={setStart} placeholder="Pick a day" />}</Field>
+            <Field label="Ends">{(a) => <DateField {...a} required value={end} onChange={setEnd} min={start || undefined} placeholder="Pick a day" />}</Field>
           </div>
           <Field label="Tone">{() => <TonePicker value={tone} onChange={setTone} />}</Field>
           <DialogActions>
@@ -149,7 +155,7 @@ export function NewRoutineDialog({ open, onOpenChange, onCreated }: OpenProps & 
               Cancel
             </Button>
             <Button type="submit" variant="primary">
-              Create routine
+              Create draft
             </Button>
           </DialogActions>
         </form>
@@ -201,136 +207,6 @@ export function NewProtocolDialog({ open, onOpenChange, onCreated }: OpenProps &
   );
 }
 
-/* ── Edit task (task form: title, notes, duration, start, due, protocol) ── */
-
-export function EditTaskDialog({ task, ...p }: OpenProps & { task: MockTask }) {
-  const update = useMock((s) => s.updateTask);
-  const del = useMock((s) => s.deleteTask);
-  const protocols = useMock((s) => s.protocols);
-  const [title, setTitle] = useState(task.title);
-  const [notes, setNotes] = useState(task.notes ?? "");
-  const [duration, setDuration] = useState(task.duration ?? "");
-  const [protocolId, setProtocolId] = useState(task.protocolId ?? "");
-  const [error, setError] = useState<string>();
-
-  useEffect(() => {
-    if (p.open) {
-      setTitle(task.title);
-      setNotes(task.notes ?? "");
-      setDuration(task.duration ?? "");
-      setProtocolId(task.protocolId ?? "");
-      setError(undefined);
-    }
-  }, [p.open, task]);
-
-  return (
-    <Dialog open={p.open} onOpenChange={p.onOpenChange}>
-      <DialogContent title="Edit task" width={480}>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (!title.trim()) return setError("A title is required.");
-            update(task.id, {
-              title: title.trim(),
-              glyph: glyphOf(title),
-              notes: notes.trim() || undefined,
-              duration: duration.trim() || undefined,
-              protocolId: protocolId || undefined,
-            });
-            p.onOpenChange(false);
-            toast("Saved.");
-          }}
-        >
-          <Field label="Title" error={error}>
-            {(a) => <Input {...a} kind="title" value={title} onChange={(e) => setTitle(e.target.value)} />}
-          </Field>
-          <Field label="Notes">{(a) => <Textarea {...a} value={notes} onChange={(e) => setNotes(e.target.value)} />}</Field>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Start">{(a) => <Input {...a} type="datetime-local" defaultValue="2026-11-10T18:00" />}</Field>
-            <Field label="Due">{(a) => <Input {...a} type="datetime-local" />}</Field>
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Duration" help="e.g. 20m, 1h">
-              {(a) => <Input {...a} placeholder="—" value={duration} onChange={(e) => setDuration(e.target.value)} />}
-            </Field>
-            <Field label="Protocol">
-              {(a) => (
-                <Select {...a} value={protocolId} onChange={(e) => setProtocolId(e.target.value)}>
-                  <option value="">None</option>
-                  {protocols.map((pr) => (
-                    <option key={pr.id} value={pr.id}>
-                      {pr.title}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
-          </div>
-          <DialogActions className="justify-between">
-            <Button
-              variant="danger"
-              onClick={() => {
-                del(task.id);
-                p.onOpenChange(false);
-                toast("Task deleted.");
-              }}
-            >
-              <TrashIcon />
-              Delete
-            </Button>
-            <div className="flex gap-2">
-              <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" variant="primary">
-                Save
-              </Button>
-            </div>
-          </DialogActions>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
-/* ── Move task ────────────────────────────────────────────────────── */
-
-export function MoveTaskDialog({ task, ...p }: OpenProps & { task: MockTask }) {
-  const update = useMock((s) => s.updateTask);
-  const [date, setDate] = useState("2026-11-10");
-  const [time, setTime] = useState("");
-  return (
-    <Dialog open={p.open} onOpenChange={p.onOpenChange}>
-      <DialogContent title={`Move “${task.title}”`} description="Pick a new day, and a time if it has one." width={420}>
-        <form
-          className="flex flex-col gap-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            const day = format(parseISO(date), "EEE d MMM");
-            update(task.id, { meta: time ? `${day} · ${time}` : day, section: time ? "scheduled" : "day" });
-            p.onOpenChange(false);
-            toast(`Moved to ${day}${time ? ` ${time}` : ""}.`);
-          }}
-        >
-          <div className="grid grid-cols-2 gap-3">
-            <Field label="Day">{(a) => <Input {...a} type="date" required value={date} onChange={(e) => setDate(e.target.value)} />}</Field>
-            <Field label="Time (optional)">{(a) => <Input {...a} type="time" value={time} onChange={(e) => setTime(e.target.value)} />}</Field>
-          </div>
-          <DialogActions>
-            <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
-              Cancel
-            </Button>
-            <Button type="submit" variant="primary">
-              Move
-            </Button>
-          </DialogActions>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
-}
-
 /* ── Routine entry (what + when) ──────────────────────────────────── */
 
 const FREQS = [
@@ -347,7 +223,9 @@ export function EntryDialog({
   ...p
 }: OpenProps & { routine: MockRoutine; entry?: MockEntry }) {
   const saveEntry = useMock((s) => s.saveEntry);
+  const removeEntry = useMock((s) => s.removeEntry);
   const protocols = useMock((s) => s.protocols);
+  const draft = !!routine.draft;
   const [title, setTitle] = useState("");
   const [freq, setFreq] = useState<(typeof FREQS)[number]["v"]>("weekly");
   const [days, setDays] = useState<string[]>(["Mon", "Wed", "Fri"]);
@@ -361,6 +239,7 @@ export function EntryDialog({
   useEffect(() => {
     if (p.open) {
       setTitle(entry?.title ?? "");
+      setProtocol(entry?.protocolId ?? "");
       setError(undefined);
     }
   }, [p.open, entry]);
@@ -374,14 +253,31 @@ export function EntryDialog({
     const each = gets === "times" ? times : `${count} times`;
     const proto = protocols.find((x) => x.id === protocol)?.title;
     const rule = [when, each, duration, proto].filter(Boolean).join(" · ");
-    saveEntry(routine.id, { id: entry?.id, title: title.trim(), glyph: glyphOf(title), rule });
+    saveEntry(routine.id, { id: entry?.id, title: title.trim(), glyph: glyphOf(title), rule, protocolId: protocol || undefined });
     p.onOpenChange(false);
-    toast(entry ? "Entry saved. Changes apply from today on." : "Entry added.");
+    toast(entry && !draft ? "Entry saved. Changes apply from today on." : entry ? "Entry saved." : "Entry added.");
+  }
+
+  function remove() {
+    if (!entry) return;
+    removeEntry(routine.id, entry.id);
+    p.onOpenChange(false);
+    toast(draft ? "Entry removed." : "Entry removed. Its tasks stop from today on; the past stays.");
   }
 
   return (
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
-      <DialogContent title={entry ? "Edit entry" : "Add entry"} description={`In ${routine.name}`} width={500}>
+      <DialogContent
+        title={entry ? "Edit entry" : "Add entry"}
+        description={
+          draft
+            ? `In ${routine.name} (draft). Change anything — there's no history yet.`
+            : entry
+              ? `In ${routine.name}. Changes apply from today on; past tasks keep what they were.`
+              : `In ${routine.name}. It starts producing tasks from today.`
+        }
+        width={500}
+      >
         <form onSubmit={submit} className="flex flex-col gap-4">
           <Field label="What" error={error}>
             {(a) => <Input {...a} kind="title" autoFocus placeholder="Gym" value={title} onChange={(e) => setTitle(e.target.value)} />}
@@ -432,21 +328,16 @@ export function EntryDialog({
 
           <div className="grid grid-cols-2 gap-3">
             <Field label="Duration">{(a) => <Input {...a} placeholder="1h" value={duration} onChange={(e) => setDuration(e.target.value)} />}</Field>
-            <Field label="Protocol">
-              {(a) => (
-                <Select {...a} value={protocol} onChange={(e) => setProtocol(e.target.value)}>
-                  <option value="">None</option>
-                  {protocols.map((x) => (
-                    <option key={x.id} value={x.id}>
-                      {x.title}
-                    </option>
-                  ))}
-                </Select>
-              )}
-            </Field>
           </div>
+          <Field label="Protocol">{() => <ProtocolPicker value={protocol} onChange={setProtocol} />}</Field>
 
           <DialogActions>
+            {entry && (
+              <Button variant="danger" className="mr-auto" onClick={remove}>
+                <TrashIcon />
+                Remove entry
+              </Button>
+            )}
             <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
               Cancel
             </Button>
@@ -504,27 +395,41 @@ export function EditRoutineDialog({ routine, ...p }: OpenProps & { routine: Mock
   );
 }
 
+/** Published: only the end date (the start is locked). Draft: both dates are free. */
 export function EndDateDialog({ routine, ...p }: OpenProps & { routine: MockRoutine }) {
   const update = useMock((s) => s.updateRoutine);
+  const draft = !!routine.draft;
+  const [start, setStart] = useState("2026-12-01");
   const [end, setEnd] = useState("2026-11-30");
   const startLabel = routine.period.split("→")[0]?.trim() ?? "";
   return (
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
       <DialogContent
-        title="Change end date"
-        description="It can't move earlier than the last done task. Ending isn't cancelling: what's done stays done."
+        title={draft ? "Change dates" : "Change end date"}
+        description={
+          draft
+            ? "It's a draft, so both dates are free. Once published, the start is locked."
+            : "It can't move earlier than the last done task. Ending isn't cancelling: what's done stays done."
+        }
         width={420}
       >
         <form
           className="flex flex-col gap-4"
           onSubmit={(e) => {
             e.preventDefault();
-            update(routine.id, { period: `${startLabel} → ${fmtDay(end)}` });
+            update(routine.id, { period: `${draft ? fmtDay(start) : startLabel} → ${fmtDay(end)}` });
             p.onOpenChange(false);
-            toast(`Ends ${fmtDay(end)}.`);
+            toast(draft ? `${fmtDay(start)} → ${fmtDay(end)}.` : `Ends ${fmtDay(end)}.`);
           }}
         >
-          <Field label="Ends">{(a) => <Input {...a} type="date" required value={end} onChange={(e) => setEnd(e.target.value)} />}</Field>
+          {draft ? (
+            <div className="grid grid-cols-2 gap-3">
+              <Field label="Starts">{(a) => <DateField {...a} required value={start} onChange={setStart} placeholder="Pick a day" />}</Field>
+              <Field label="Ends">{(a) => <DateField {...a} required value={end} onChange={setEnd} min={start || undefined} placeholder="Pick a day" />}</Field>
+            </div>
+          ) : (
+            <Field label="Ends">{(a) => <DateField {...a} required value={end} onChange={setEnd} min={start || undefined} placeholder="Pick a day" />}</Field>
+          )}
           <DialogActions>
             <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
               Cancel
@@ -541,29 +446,39 @@ export function EndDateDialog({ routine, ...p }: OpenProps & { routine: MockRout
 
 /* ── Confirm (destructive) ────────────────────────────────────────── */
 
+/** A yes/no question. `danger` (default) for deleting; `primary` for big but safe steps (publish, end). */
 export function ConfirmDialog({
   title,
   body,
   confirmLabel,
+  cancelLabel = "Keep it",
+  variant = "danger",
   onConfirm,
   ...p
-}: OpenProps & { title: string; body: string; confirmLabel: string; onConfirm: () => void }) {
+}: OpenProps & {
+  title: string;
+  body: string;
+  confirmLabel: string;
+  cancelLabel?: string;
+  variant?: "danger" | "primary";
+  onConfirm: () => void;
+}) {
   return (
     <Dialog open={p.open} onOpenChange={p.onOpenChange}>
       <DialogContent title={title} width={420}>
         <p className="read m-0 text-[15px] leading-[21px] text-fg-secondary">{body}</p>
         <DialogActions>
           <Button variant="ghost" onClick={() => p.onOpenChange(false)}>
-            Keep it
+            {cancelLabel}
           </Button>
           <Button
-            variant="danger"
+            variant={variant}
             onClick={() => {
               onConfirm();
               p.onOpenChange(false);
             }}
           >
-            <TrashIcon />
+            {variant === "danger" && <TrashIcon />}
             {confirmLabel}
           </Button>
         </DialogActions>

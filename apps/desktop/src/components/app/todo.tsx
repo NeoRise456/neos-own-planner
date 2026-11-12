@@ -1,26 +1,37 @@
 import { useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
+import { type Tag, type Task, dateTime, momentLocal, splitDateTime, tickOptions, toMoment } from "@planner/core";
+import { useRepos } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { toneHex } from "@/lib/tones";
-import { useMock } from "@/mock/store";
-import type { MockTask } from "@/mock/data";
+import { currentClock, useClock } from "@/lib/clock";
+import { act } from "@/lib/data-hooks";
+import { glyphOf } from "@/lib/glyph";
+import { panelLine, toneOf, visualState, type TaskView } from "@/lib/task-view";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
-import { Label, MiniSquare } from "@/components/ui/bits";
-import { Input } from "@/components/ui/field";
+import { Chip, Label, MiniSquare } from "@/components/ui/bits";
+import { DateField } from "@/components/ui/date-picker";
+import { TimeField } from "@/components/ui/time-picker";
 import { CheckIcon, ChevronRightIcon, CloseIcon } from "@/components/ui/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/menu";
-import { Check, Glyph, GlyphTile, type VisualState } from "@/components/ui/task-visuals";
+import { Check, Glyph, GlyphTile } from "@/components/ui/task-visuals";
 import { toast } from "@/components/ui/toast";
-import { EditTaskDialog, MoveTaskDialog } from "./dialogs";
+import { EditTaskDialog, MoveTaskDialog } from "./task-dialogs";
 import { SidePanel } from "./side-panel";
 
-export function stateOf(t: MockTask): VisualState {
-  if (t.cancelled) return "cancelled";
-  if (t.done) return "done";
-  if (t.section === "missed") return "missed";
-  return "todo";
+/** Tick / untick / uncancel from the check box — the same everywhere a task shows. */
+function useTaskActions(task: Task) {
+  const repos = useRepos();
+  return {
+    tick: (doneAt?: string) => act(repos.tasks.tick(task.id, doneAt)),
+    untick: () => act(repos.tasks.untick(task.id)),
+    cancel: () =>
+      act(repos.tasks.cancel(task.id), () =>
+        toast(`Cancelled “${task.title}”.`, { action: { label: "Undo", onClick: () => void act(repos.tasks.uncancel(task.id)) } }),
+      ),
+    uncancel: () => act(repos.tasks.uncancel(task.id), `“${task.title}” is back.`),
+  };
 }
 
 /**
@@ -28,32 +39,18 @@ export function stateOf(t: MockTask): VisualState {
  * check · glyph (Doto 18, tone) · title (Figtree 15/600) · meta (UI 11 caps, right).
  * Count tasks show one mini square per copy. Done rows sit on #0A0A0A with a grey title.
  */
-export function TaskRow({ task, selected }: { task: MockTask; selected?: boolean }) {
-  const tick = useMock((s) => s.tick);
-  const setCancelled = useMock((s) => s.setCancelled);
+export function TaskRow({ view, selected, count }: { view: TaskView; selected?: boolean; count?: { done: number; of: number } }) {
+  const { task, state, tone: toneName, glyph, meta } = view;
+  const actions = useTaskActions(task);
   const openTask = useUi((s) => s.set);
-  const state = stateOf(task);
   const [lateOpen, setLateOpen] = useState(false);
-  const tone = toneHex(task.tone);
-
-  const meta =
-    state === "cancelled"
-      ? "Cancelled"
-      : state === "done"
-        ? (task.doneMeta ?? "done")
-        : task.count
-          ? `${task.count.done}/${task.count.of}`
-          : state === "missed"
-            ? `Missed · ${task.meta}`
-            : task.meta;
+  const tone = toneHex(toneName);
 
   function onCheck() {
-    if (state === "cancelled") {
-      setCancelled(task.id, false);
-      return toast(`“${task.title}” is back.`);
-    }
+    if (state === "cancelled") return void actions.uncancel();
     if (state === "missed") return setLateOpen(true);
-    tick(task.id);
+    if (state === "done") return void actions.untick();
+    void actions.tick();
   }
 
   const checkLabel =
@@ -69,12 +66,12 @@ export function TaskRow({ task, selected }: { task: MockTask; selected?: boolean
     >
       <Popover open={lateOpen} onOpenChange={setLateOpen}>
         <PopoverAnchor asChild>
-          <Check state={state} tone={task.tone} label={checkLabel} onClick={onCheck} />
+          <Check state={state} tone={toneName} label={checkLabel} onClick={onCheck} />
         </PopoverAnchor>
-        <LateTickOptions task={task} onDone={() => setLateOpen(false)} />
+        {lateOpen && <LateTickOptions task={task} label={meta} onDone={() => setLateOpen(false)} />}
       </Popover>
       <Glyph color={state === "missed" ? "#3A3A3A" : state === "cancelled" ? "#262626" : tone} className="w-7">
-        {task.glyph}
+        {glyph}
       </Glyph>
       <button
         type="button"
@@ -87,10 +84,10 @@ export function TaskRow({ task, selected }: { task: MockTask; selected?: boolean
       >
         {task.title}
       </button>
-      {task.count && state === "todo" && (
+      {count && state === "todo" && (
         <span aria-hidden className="flex gap-[3px]">
-          {Array.from({ length: task.count.of }, (_, i) => (
-            <MiniSquare key={i} color={tone} outline={i >= task.count!.done} />
+          {Array.from({ length: count.of }, (_, i) => (
+            <MiniSquare key={i} color={tone} outline={i >= count.done} />
           ))}
         </span>
       )}
@@ -99,34 +96,41 @@ export function TaskRow({ task, selected }: { task: MockTask; selected?: boolean
   );
 }
 
+/** "Fri 6 Nov 23:59" — for the late-tick options. */
+const momentLabel = (m: string) => {
+  const { date, time } = splitDateTime(momentLocal(m));
+  return `${format(parseISO(date), "EEE d MMM")} ${time}`;
+};
+
 /**
  * Ticking after the time ran out (TASK.md "Ticking"): Done now / Done on time / Pick a time.
- * Not drawn in the design; built from its popover + button styles.
+ * The moments come from @planner/core's tickOptions. Not drawn in the design; built from
+ * its popover + button styles.
  */
-function LateTickOptions({ task, onDone }: { task: MockTask; onDone: () => void }) {
-  const tick = useMock((s) => s.tick);
+function LateTickOptions({ task, label, onDone }: { task: Task; label: string; onDone: () => void }) {
+  const actions = useTaskActions(task);
+  const [options] = useState(() => tickOptions(task, currentClock()));
   const [picking, setPicking] = useState(false);
-  const [time, setTime] = useState("19:30");
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
-  const done = (label: string) => {
-    tick(task.id, label);
+  const [pickedDate, setPickedDate] = useState(() => (options ? splitDateTime(momentLocal(options.onTime)).date : ""));
+  const [pickedTime, setPickedTime] = useState(() => (options ? splitDateTime(momentLocal(options.onTime)).time : ""));
+  if (!options) return null;
+  const done = (doneAt: string) => {
+    void actions.tick(doneAt);
     onDone();
-    setPicking(false);
   };
-  const opt = "flex h-8 w-full items-center justify-between gap-6 rounded-btn px-2.5 text-left font-ui text-[13px] hover:bg-ink-fill";
+  const opt = "flex h-8 w-full items-center justify-between gap-6 rounded-btn px-2.5 text-left font-ui text-[13px] whitespace-nowrap hover:bg-ink-fill";
   return (
-    <PopoverContent className="w-[240px]" side="bottom" align="start">
+    <PopoverContent className="w-auto min-w-[240px]" side="bottom" align="start">
       <div className="px-2.5 pt-1.5 pb-1">
-        <Label>Missed · {task.meta}</Label>
+        <Label>{label}</Label>
       </div>
       {!picking ? (
         <>
-          <button type="button" className={opt} onClick={() => done(`done ${hhmm}`)}>
-            Done now <span className="meta text-fg-label">{hhmm}</span>
+          <button type="button" className={opt} onClick={() => done(options.doneNow)}>
+            Done now <span className="meta text-fg-label">{splitDateTime(momentLocal(options.doneNow)).time}</span>
           </button>
-          <button type="button" className={opt} onClick={() => done("done on time")}>
-            Done on time <span className="meta text-fg-label">{task.meta}</span>
+          <button type="button" className={opt} onClick={() => done(options.onTime)}>
+            Done on time <span className="meta text-fg-label">{momentLabel(options.onTime)}</span>
           </button>
           <button type="button" className={opt} onClick={() => setPicking(true)}>
             Pick a time… <ChevronRightIcon size={9} className="text-fg-label" />
@@ -137,11 +141,12 @@ function LateTickOptions({ task, onDone }: { task: MockTask; onDone: () => void 
           className="flex items-center gap-2 p-1.5"
           onSubmit={(e) => {
             e.preventDefault();
-            done(`done ${time}`);
+            if (pickedDate && pickedTime) done(toMoment(dateTime(pickedDate, pickedTime), currentClock().offset));
           }}
         >
-          <Input type="time" aria-label="Done at" value={time} onChange={(e) => setTime(e.target.value)} autoFocus />
-          <Button type="submit" variant="primary" size="lg">
+          <DateField aria-label="Done on" required value={pickedDate} onChange={setPickedDate} className="w-[150px]" />
+          <TimeField aria-label="Done at" required value={pickedTime} onChange={setPickedTime} className="w-[96px]" />
+          <Button type="submit" variant="primary" size="lg" aria-label="Save" disabled={!pickedDate || !pickedTime}>
             <CheckIcon />
           </Button>
         </form>
@@ -152,134 +157,199 @@ function LateTickOptions({ task, onDone }: { task: MockTask; onDone: () => void 
 
 /**
  * Task panel — screens/11-todo-task-open. #050505, left edge #1A1A1A.
- * Tile 64 (fills with the tone when done) · title · meta · ✕ ·
- * routine link · actions (Done/Undo, Move, Edit, Cancel) · protocol steps.
+ * Tile 64 (fills with the tone when done) · title · when · ✕ · actions
+ * (Done/Undo, Move, Edit, Cancel) · tags · notes.
+ * Routine links and protocol steps come back with routines (phase 5).
  */
-export function TaskPanel({ task }: { task: MockTask }) {
-  const tick = useMock((s) => s.tick);
-  const setCancelled = useMock((s) => s.setCancelled);
-  const routine = useMock((s) => s.routines.find((r) => r.id === task.routineId));
-  const protocol = useMock((s) => s.protocols.find((p) => p.id === task.protocolId));
+export function TaskPanel({ task, tags }: { task: Task; tags: Map<string, Tag> }) {
+  const actions = useTaskActions(task);
+  const clock = useClock();
   const close = () => useUi.getState().set({ openTaskId: null });
   const [edit, setEdit] = useState(false);
   const [move, setMove] = useState(false);
-  const state = stateOf(task);
-
-  const metaLine = [
-    format(new Date(), "EEE d MMM"),
-    state === "done" ? task.doneMeta : state === "cancelled" ? "cancelled" : task.section === "day" ? "during the day" : task.meta || "anytime",
-    task.duration,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  const state = visualState(task, clock);
+  const taskTags = task.tags.map((id) => tags.get(id)).filter((t): t is Tag => t !== undefined);
 
   return (
     <SidePanel>
-    <aside
-      aria-label="Task"
-      className="flex h-full w-[400px] max-w-[50%] shrink-0 animate-[panel-in_.22s_var(--ease-snap)] flex-col border-l border-ink-line-soft bg-panel"
-    >
-      {/* 36px under the title bar's clock and window buttons; the content scrolls below it */}
-      <div aria-hidden className="h-9 shrink-0" />
-      <div className="flex min-h-0 flex-1 flex-col gap-[26px] overflow-y-auto px-9 pt-10 pb-20">
-      <div className="flex items-start gap-4">
-        <GlyphTile glyph={task.glyph} tone={task.tone} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
-        <div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-1">
-          <h2 className={cn("read m-0 text-[28px] leading-[30px] font-extrabold tracking-[-.01em] text-fg-white", state === "cancelled" && "text-fg-label line-through")}>
-            {task.title}
-          </h2>
-          <span className="meta text-fg-label">{metaLine}</span>
+      <aside
+        aria-label="Task"
+        className="flex h-full w-[400px] max-w-[50%] shrink-0 animate-[panel-in_.22s_var(--ease-snap)] flex-col border-l border-ink-line-soft bg-panel"
+      >
+        {/* 36px under the title bar's clock and window buttons; the content scrolls below it */}
+        <div aria-hidden className="h-9 shrink-0" />
+        <div className="flex min-h-0 flex-1 flex-col gap-[26px] overflow-y-auto px-9 pt-10 pb-20">
+          <div className="flex items-start gap-4">
+            <GlyphTile glyph={glyphOf(task.title)} tone={toneOf(task, tags)} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-1">
+              <h2
+                className={cn(
+                  "read m-0 text-[28px] leading-[30px] font-extrabold tracking-[-.01em] break-words text-fg-white",
+                  state === "cancelled" && "text-fg-label line-through",
+                )}
+              >
+                {task.title}
+              </h2>
+              <span className="meta text-fg-label">{panelLine(task, clock)}</span>
+            </div>
+            <RoundButton label="Close" onClick={close}>
+              <CloseIcon />
+            </RoundButton>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            {state === "done" ? (
+              <Button size="lg" onClick={() => void actions.untick()}>
+                Undo
+              </Button>
+            ) : state === "missed" ? (
+              <LateDoneButton task={task} />
+            ) : state !== "cancelled" ? (
+              <Button size="lg" variant="primary" onClick={() => void actions.tick()}>
+                <CheckIcon size={12} />
+                Done
+              </Button>
+            ) : null}
+            <Button size="lg" onClick={() => setMove(true)}>
+              Move
+            </Button>
+            <Button size="lg" onClick={() => setEdit(true)}>
+              Edit
+            </Button>
+            {state === "cancelled" ? (
+              <Button size="lg" variant="ghost" onClick={() => void actions.uncancel()}>
+                Uncancel
+              </Button>
+            ) : (
+              state !== "done" && (
+                <Button size="lg" variant="ghost" onClick={() => void actions.cancel()}>
+                  Cancel
+                </Button>
+              )
+            )}
+          </div>
+
+          {state === "done" && task.doneAt && <DoneAt key={task.doneAt} task={task} />}
+
+          {taskTags.length > 0 && (
+            <PanelSection label="Tags">
+              <div className="flex flex-wrap gap-1.5 pt-2.5">
+                {taskTags.map((t) => (
+                  <TagChip key={t.id} tag={t} />
+                ))}
+              </div>
+            </PanelSection>
+          )}
+
+          {task.notes && (
+            <PanelSection label="Notes">
+              <p className="read m-0 pt-2.5 text-[15px] leading-[21px] whitespace-pre-wrap text-fg">{task.notes}</p>
+            </PanelSection>
+          )}
+
+          <EditTaskDialog task={task} open={edit} onOpenChange={setEdit} />
+          <MoveTaskDialog task={task} open={move} onOpenChange={setMove} />
         </div>
-        <RoundButton label="Close" onClick={close}>
-          <CloseIcon />
-        </RoundButton>
-      </div>
-
-      {routine && (
-        <Link
-          to="/routines/$routineId"
-          params={{ routineId: routine.id }}
-          className="flex items-center gap-3 rounded-drop border border-ink-line-mid px-[14px] py-3 no-underline transition-colors hover:bg-ink-raised"
-        >
-          <span aria-hidden className="flex size-7 shrink-0 items-center justify-center rounded-btn" style={{ background: toneHex(routine.tone) }}>
-            <Glyph size={13} color="#111111">
-              {routine.glyph}
-            </Glyph>
-          </span>
-          <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-            <span className="font-ui text-[11px] tracking-[.06em] text-fg-label uppercase">{routine.name}</span>
-            <span className="read truncate text-[15px] font-semibold text-fg-white">{routine.purpose}</span>
-          </span>
-          <ChevronRightIcon size={10} className="text-fg-placeholder" />
-        </Link>
-      )}
-
-      <div className="flex flex-wrap items-center gap-2">
-        {state === "done" ? (
-          <Button size="lg" onClick={() => tick(task.id)}>
-            Undo
-          </Button>
-        ) : state !== "cancelled" ? (
-          <Button size="lg" variant="primary" onClick={() => tick(task.id)}>
-            <CheckIcon size={12} />
-            Done
-          </Button>
-        ) : null}
-        <Button size="lg" onClick={() => setMove(true)}>
-          Move
-        </Button>
-        <Button size="lg" onClick={() => setEdit(true)}>
-          Edit
-        </Button>
-        {state === "cancelled" ? (
-          <Button size="lg" variant="ghost" onClick={() => setCancelled(task.id, false)}>
-            Uncancel
-          </Button>
-        ) : (
-          <Button
-            size="lg"
-            variant="ghost"
-            onClick={() => {
-              setCancelled(task.id, true);
-              toast(`Cancelled “${task.title}”.`, { action: { label: "Undo", onClick: () => setCancelled(task.id, false) } });
-            }}
-          >
-            Cancel
-          </Button>
-        )}
-      </div>
-
-      {task.notes && (
-        <PanelSection label="Notes">
-          <p className="read m-0 pt-2.5 text-[15px] leading-[21px] text-fg">{task.notes}</p>
-        </PanelSection>
-      )}
-
-      {protocol && (
-        <PanelSection
-          label={`Protocol — ${protocol.title}`}
-          right={
-            <Link to="/protocols/$protocolId" params={{ protocolId: protocol.id }} className="font-ui text-[11px] text-fg-label no-underline hover:text-fg-white">
-              {protocol.steps.length} steps · edit
-            </Link>
-          }
-        >
-          <ol className="m-0 list-none p-0">
-            {protocol.steps.map((s, i) => (
-              <li key={i} className="grid grid-cols-[30px_1fr] gap-2.5 border-b border-ink-line-faint py-[9px]">
-                <span className="pt-0.5 font-ui text-[11px] text-fg-label tabular-nums">{String(i + 1).padStart(2, "0")}</span>
-                <span className="read text-[14px] leading-5 text-fg">{s}</span>
-              </li>
-            ))}
-          </ol>
-        </PanelSection>
-      )}
-
-      <EditTaskDialog task={task} open={edit} onOpenChange={setEdit} />
-      <MoveTaskDialog task={task} open={move} onOpenChange={setMove} />
-      </div>
-    </aside>
+      </aside>
     </SidePanel>
+  );
+}
+
+/**
+ * When a done task was done (editable, TASK.md "done_at") and when it was ticked in the
+ * app (automatic) — the second only when they differ.
+ */
+function DoneAt({ task }: { task: Task }) {
+  const repos = useRepos();
+  const local = splitDateTime(momentLocal(task.doneAt!));
+  const [editing, setEditing] = useState(false);
+  const [date, setDate] = useState(local.date);
+  const [time, setTime] = useState(local.time);
+  const ticked = task.loggedAt && momentLocal(task.loggedAt) !== momentLocal(task.doneAt!) ? momentLabel(task.loggedAt) : null;
+
+  return (
+    <PanelSection
+      label="Done"
+      right={
+        !editing && (
+          <button type="button" onClick={() => setEditing(true)} className="font-ui text-[11px] text-fg-label hover:text-fg-white">
+            Change
+          </button>
+        )
+      }
+    >
+      {editing ? (
+        <form
+          className="flex flex-col gap-2.5 pt-2.5"
+          onSubmit={async (e) => {
+            e.preventDefault();
+            const saved = await act(repos.tasks.setDoneAt(task.id, toMoment(dateTime(date, time), currentClock().offset)), "Done time changed.");
+            if (saved) setEditing(false);
+          }}
+        >
+          <div className="grid grid-cols-[1fr_112px] gap-2">
+            <DateField aria-label="Done on" required value={date} onChange={setDate} />
+            <TimeField aria-label="Done at" required value={time} onChange={setTime} />
+          </div>
+          <div className="flex gap-2">
+            <Button type="submit" variant="primary" disabled={!date || !time}>
+              Save
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={() => {
+                setDate(local.date);
+                setTime(local.time);
+                setEditing(false);
+              }}
+            >
+              Cancel
+            </Button>
+          </div>
+        </form>
+      ) : (
+        <dl className="m-0 grid grid-cols-[64px_1fr] gap-y-1.5 pt-2.5 font-ui text-[13px] tabular-nums">
+          <dt className="text-fg-label">Done</dt>
+          <dd className="m-0 text-fg">{momentLabel(task.doneAt!)}</dd>
+          {ticked && (
+            <>
+              <dt className="text-fg-label">Ticked</dt>
+              <dd className="m-0 text-fg-secondary">{ticked}</dd>
+            </>
+          )}
+        </dl>
+      )}
+    </PanelSection>
+  );
+}
+
+/** "Done" on a missed task opens the same three choices as its check box. */
+function LateDoneButton({ task }: { task: Task }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverAnchor asChild>
+        <Button size="lg" variant="primary" onClick={() => setOpen(true)}>
+          <CheckIcon size={12} />
+          Done…
+        </Button>
+      </PopoverAnchor>
+      {open && <LateTickOptions task={task} label="Missed" onDone={() => setOpen(false)} />}
+    </Popover>
+  );
+}
+
+export function TagChip({ tag, onRemove }: { tag: Pick<Tag, "name" | "color">; onRemove?: () => void }) {
+  return (
+    <Chip size="md" className="gap-1.5 normal-case">
+      <span aria-hidden className="size-2 rounded-[2px]" style={{ background: toneHex(tag.color as Parameters<typeof toneHex>[0]) }} />
+      {tag.name}
+      {onRemove && (
+        <button type="button" aria-label={`Remove tag ${tag.name}`} onClick={onRemove} className="-mr-1 ml-0.5 text-fg-label hover:text-fg-white">
+          <CloseIcon size={8} />
+        </button>
+      )}
+    </Chip>
   );
 }
 

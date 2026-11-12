@@ -4,6 +4,8 @@ import { Button, IconButton, RoundButton } from "@/components/ui/button";
 import { Chip, DropZone, EmptyState, Label, Loader, Progress } from "@/components/ui/bits";
 import { ChoiceCard, ChoiceGroup, RadioRow, StepHeading } from "@/components/ui/choice";
 import { Field, Input, QuickAdd, Select } from "@/components/ui/field";
+import { DateField } from "@/components/ui/date-picker";
+import { TimeField } from "@/components/ui/time-picker";
 import {
   ChevronLeftIcon,
   ChevronRightIcon,
@@ -36,6 +38,10 @@ function ComponentSheet() {
   const [gets, setGets] = useState("times");
   const [draft, setDraft] = useState("");
   const [title, setTitle] = useState("");
+  const [day, setDay] = useState("2026-11-12");
+  const [time, setTime] = useState("18:30");
+  const [ends, setEnds] = useState("");
+  const [noTime, setNoTime] = useState("");
   const [shelf, setShelf] = useState(0);
   const [rowStates, setRowStates] = useState<VisualState[]>(["done", "todo", "missed", "cancelled"]);
 
@@ -131,6 +137,17 @@ function ComponentSheet() {
           <div className="flex gap-2.5">
             <Toggle aria-label="Example on" checked={t2} onCheckedChange={setT2} />
             <Toggle aria-label="Example off" checked={t3} onCheckedChange={setT3} />
+          </div>
+        </Sec>
+
+        <Sec label="Date & time" width={414}>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="Day">{(a) => <DateField {...a} value={day} onChange={setDay} />}</Field>
+            <Field label="Time" help="Type 1830, 6pm… or pick">
+              {(a) => <TimeField {...a} value={time} onChange={setTime} />}
+            </Field>
+            <Field label="Ends (required)">{(a) => <DateField {...a} required value={ends} onChange={setEnds} min={day || undefined} placeholder="Pick a day" />}</Field>
+            <Field label="Empty">{(a) => <TimeField {...a} value={noTime} onChange={setNoTime} />}</Field>
           </div>
         </Sec>
 

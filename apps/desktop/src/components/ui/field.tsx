@@ -14,7 +14,7 @@ import { ChevronDownIcon, PlusIcon } from "./icons";
  * Inputs — DESIGN.md §3. Black, 1px #2A2A2A, radius 6; focus border #8C8C8C.
  * kind: text (UI 13) · title (Figtree 18) · code (Doto, square dots)
  */
-const inputBase =
+export const inputBase =
   "w-full rounded-btn border border-ink-line bg-black px-2.5 text-fg outline-none transition-colors duration-[120ms] placeholder:text-fg-placeholder focus:border-fg-muted aria-invalid:border-error-line";
 
 export const Input = forwardRef<

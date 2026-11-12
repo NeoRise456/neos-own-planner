@@ -33,21 +33,42 @@ Routine "Exercise plan"   Sep 1 → Nov 30   (end required)
 | `purpose` | no | Text: the *why*. "Get stronger and have more energy" |
 | `start_date` | yes | When it starts |
 | `end_date` | **yes** | When it ends. **Every routine ends** — life changes too much to keep one forever |
-| `entries` | no | Its routine entries. A routine can be empty (e.g. while you're setting it up) |
+| `entries` | no | Its routine entries. A draft can be empty; publishing needs at least one |
 | `cloned_from` | no | The routine it was duplicated from |
 | `lineage` | yes | Shared by a routine and all its copies, so they can be seen together |
+| `published_at` | no | When it was published. Empty = **draft** |
 
 A routine contains **only entries** — never one-off tasks.
 
-### Status (worked out from the dates)
+### Status
 | Status | When |
 |---|---|
-| **upcoming** | today is before `start_date` |
-| **active** | today is between `start_date` and `end_date` |
-| **ended** | today is after `end_date` |
+| **draft** | not published yet: you're setting it up, **no tasks exist** |
+| **upcoming** | published, today is before `start_date` |
+| **active** | published, today is between `start_date` and `end_date` |
+| **ended** | published, today is after `end_date` |
+
+### Draft → publish
+A new routine starts as a **draft**. You set it up — title, purpose, dates, entries — and nothing shows in Todo or Calendar yet. **Publishing** is the moment its history starts.
+
+| | Draft | Published |
+|---|---|---|
+| Tasks in Todo / Calendar | none | yes, from the publish day on |
+| Editing an entry | overwrites it — no history yet | the change applies **from today on** (see "Changing an entry") |
+| Removing an entry | it's just deleted | its tasks stop from today on |
+| Title, purpose | free | free |
+| Start date | free | **locked** (it anchors "every N" and the history) |
+| End date | free | the "Ending early / extending" rules |
+| Delete | free | only while nothing in it is done — otherwise **End** it |
+
+**Publishing:**
+- needs a title, both dates, **at least one complete entry**, and an end date that hasn't passed;
+- tasks start **from the publish day** — or the start date, if that's later. A routine starting Sep 1 published on Nov 11 does *not* fill Sep–Nov with missed tasks.
+
+**Published by mistake?** While nothing in it is done, you can move it **back to draft** (its entries keep their latest version; tasks you had touched go away) or delete it. Once you've ticked something, that's real history: you can only end it.
 
 ### Ending early / extending
-Change the `end_date`.
+Change the `end_date`. The **End** button ends it **today**: everything done, missed or cancelled stays, and nothing appears after today. (A published routine that hasn't started yet can't be ended — move it back to draft or delete it.)
 - **Moved earlier** → allowed only down to the day of the routine's **last done task**. A done task always stays inside its routine's period, so nothing you did is ever lost or turned into something else. Tasks after the new end simply stop existing.
 - **Moved later** → its entries keep producing tasks until the new end.
 
@@ -73,6 +94,7 @@ Sep 8 ─────────────────── Nov 20 │ Nov 2
 
 ### Restarting — duplicate
 To come back to something (e.g. exercise after a 2-month break), **duplicate the old routine** into a new one:
+- the copy is a **draft**: adjust it, then publish
 - copies the title, purpose and entries, with new dates
 - sets `cloned_from` and keeps the same `lineage`
 - entries keep pointing to the **same protocols**
@@ -81,7 +103,10 @@ Each period gets its own clean history ("Exercise — autumn" vs "Exercise — s
 
 ### Deleting a routine
 - **Ending** is the normal way to stop a routine — it keeps everything.
-- **Deleting** is for mistakes (a routine made by accident). It **deletes the routine's whole history** — all its done, missed and cancelled tasks — so the app warns you first.
+- **Deleting** is for mistakes:
+  - a **draft** can always be deleted — there's nothing to lose;
+  - a **published** routine only while **nothing in it is done**. Its missed and cancelled tasks go too, so the app warns you first;
+  - once something is done, it can't be deleted — **end** it instead. Nothing you did is ever lost.
 - If a routine that others were duplicated from is deleted, the copies stay as they are and just lose the "came from" link.
 
 ### Tracking — consistency only
@@ -177,7 +202,7 @@ A day gets an entry's tasks only if all four pass:
 
 | # | Question | Example — "Gym" (Mon/Wed/Fri 18:00) on Wed 5 Nov |
 |---|---|---|
-| 1 | Is the **routine active** that day? | Exercise plan, Sep 1 → Nov 30 ✅ |
+| 1 | Is the routine **published** and **active** that day? | Exercise plan, Sep 1 → Nov 30 ✅ |
 | 2 | Does **this version of the entry** apply that day? (changes apply from their date on) | no changes yet ✅ |
 | 3 | Does the day **match the rule**? | weekly, Wed is one of its days ✅ |
 | 4 | **How many** tasks does it get? | 1 time (18:00) → 1 task |
@@ -238,12 +263,12 @@ Routine active? → Entry version applies? → Day matches rule? → N tasks
 ```
 
 ### Changing an entry mid-routine
-Changes apply **from today on**. Past tasks keep what they were (time, duration, title…), so history stays true.
+In a **draft**, a change simply overwrites the entry. In a **published** routine, changes apply **from today on**. Past tasks keep what they were (time, duration, title…), so history stays true.
 - e.g. Gym moves from 18:00 to 19:00 on Nov 10 → every Gym task from Nov 10 is at 19:00; before Nov 10 they stay at 18:00.
 - Tasks after today that you already touched (moved, noted, cancelled) keep your changes.
 
 ### Removing an entry
-Its tasks stop from today on. Past tasks stay as history.
+In a **draft**, it's just deleted. In a **published** routine, its tasks stop from today on; past tasks stay as history.
 
 ### Rules / validation
 - `title` required.
@@ -270,6 +295,25 @@ Its tasks stop from today on. Past tasks stay as history.
 - Used by one-off tasks and by routine entries (their tasks inherit it).
 - Shown when you open a task.
 
+### Status (worked out from the routines)
+| Status | When |
+|---|---|
+| **active** | a **published** routine that hasn't ended (running or upcoming) uses it in an entry, as the entry is now |
+| **past** | only **history** uses it: ended routines, removed entries, or an older version of an entry (it was swapped for another protocol) |
+| **unused** | no published routine uses it |
+
+- **Drafts and one-off tasks don't count.** A protocol used only by a draft stays unused; it turns active when that routine is published.
+- It changes by itself: end the last routine using "Gym warm-up" → past; use it in a running routine again → active.
+
+### Finding and reusing
+- Search protocols by title or step text — **past ones included** — and pick one for an entry or a task. Using a past protocol in a running routine makes it active again.
+- Lists show active first, then unused, then past.
+
+### Deleting a protocol
+- **Only an unused protocol can be deleted**, with a warning. Draft entries and one-off tasks that use it just lose it; nothing else changes.
+- **Active** → it can't be deleted: remove it from those entries first.
+- **Past** → it can't be deleted: it's part of those routines' history, and their tasks still show it. It just sits in the past list until you use it again.
+
 ### Example — Shower
 
 1. Get the drier and clothes, go to the bathroom
@@ -290,6 +334,20 @@ Its tasks stop from today on. Past tasks stay as history.
 16. Dirty clothes in the bin, drier back in its place
 
 ---
+
+## Decided while building the rules (phase 1)
+
+Details this doc didn't settle, as `packages/core` implements them:
+
+- **An entry added to a published routine applies from the day it's added** (or the routine's start, if that's later). It never fills the past with missed tasks. In a draft, every entry starts on the publish day.
+- **Every 2 weeks** counts whole weeks (Mon–Sun) from the week the routine starts in, so a routine starting on a Wednesday still matches that week's Friday.
+- **Monthly by weekday** = the 1st, 2nd, 3rd, 4th or last (e.g. "last Friday"). There's no "5th", since most months don't have one.
+- **Removing an entry** keeps every done task, even one from the removal day on. Other touched tasks from then on go away. Nothing you did is lost, as with the end date.
+- **"Water 2/4"**: a cancelled copy doesn't count (1 done + 1 cancelled of 4 = 1/3), the same way consistency ignores cancelled tasks.
+- **Changing an entry twice on the same day** keeps only the last change for that day.
+- **Duplicating** copies each entry as it is now (its latest version), starting at the new start date. Removed entries aren't copied.
+- **Consistency** counts tasks by the day the entry placed them on, wherever you moved them. A task ticked early, before its day, already counts as done.
+- **A protocol can have no steps** while you set it up (with a warning). An empty step isn't allowed.
 
 ## Not included (on purpose)
 - Repeating tasks outside a routine

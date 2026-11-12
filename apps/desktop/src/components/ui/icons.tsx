@@ -112,6 +112,7 @@ export const TodoIcon = nav("M3 3.5h10v9H3zM5.6 8l1.6 1.6 3.2-3.4");
 export const CalendarIcon = nav("M2.5 3.5h11v10h-11zM2.5 6.5h11M5.5 2v3M10.5 2v3");
 export const RoutinesIcon = nav("M13 8a5 5 0 1 1-1.5-3.6M13 2.5V5h-2.5");
 export const ProtocolsIcon = nav("M5.5 4.5h8M5.5 8h8M5.5 11.5h8M2.5 4.5h.5M2.5 8h.5M2.5 11.5h.5");
+export const ClockIcon = nav("M8 2.5a5.5 5.5 0 1 0 0 11 5.5 5.5 0 0 0 0-11zM8 5v3.2l2.2 1.4");
 export const SettingsIcon = ({ size = 16, ...p }: P) => (
   <svg {...base(size, "0 0 16 16", p)}>
     <path

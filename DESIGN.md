@@ -272,6 +272,12 @@ Small, consistent radii: 3 step badge · 4 chip and mini square · 6 button and 
 - **Focus:** border `#8C8C8C` plus the global 2px white focus ring (offset 2).
 - **Error:** red text under the field and `aria-invalid`.
 
+### Date & time fields
+Never the browser's native pickers: they ignore the system (light rounded popups, a 12-hour wheel, blue selection). Both fields look like an input (black, 1px `#2A2A2A`, 6px radius, 36px, UI 13, tabular numerals) with a 14px grey icon on the left and a small ✕ on the right to clear (left out when the field is required). Code: `components/ui/date-picker.tsx`, `time-picker.tsx`; both are on the component sheet.
+- **Date field:** shows the day as "Wed 11 Nov" (the year only when it isn't this year); placeholder "No date" or "Pick a day". Opens a month calendar on a `#111` popover card: the month as a Figtree 800 15px heading with small round ‹ › buttons; weekday labels Mo…Su in label type, **weeks start on Monday**; 36px day keys in a 7-column grid with 2px gaps, days of other months left blank. The picked day is a **white key with black text** (the One White Rule); today has a 1px grey (`#9A9A9A`) ring; days outside the allowed range are greyed out (`#7A7A7A`). A hairline footer holds a ghost "Clear" and a quiet "Today". Keyboard: arrows move a day or a week, Home / End the week, Page Up / Down the month, Enter picks, Escape closes.
+- **Time field:** 24-hour, always. A real text box: type "1830", "18:30", "6pm" or "9"; Enter or leaving the field reads it, and text that can't be read stays, with a red border, until it's fixed. ↑ / ↓ move it by 5 minutes. Focusing it opens two scrolling columns (HOUR 00–23, MIN in 5-minute steps, 32px keys) that open centered on the current value, with the same white key for the chosen one; footer "Clear" and "Now".
+- Popovers sit above dialogs, so both work inside forms.
+
 ### Navigation
 - **Sidebar:** 36px items with icons; the active item is a white pill with black text; counts on the right. Routines and Protocols open a sub-list with a left rail, tone squares, an "Ended" heading and "+ New …".
 - **Sidebar clock:** time in Doto 34px white, date (12px caps) and UTC offset below; the whole block links to Settings.
@@ -306,9 +312,10 @@ Sonner-style stack at bottom right (356px): older toasts tuck behind the front o
 - **Don't** draw dashed boxes around empty states; dashed borders mean a real drop zone or cancelled.
 - **Don't** let a title row wrap its controls below it; scale or truncate the title instead.
 - **Don't** use emoji or exclamation marks.
+- **Don't** use the browser's native date, time or datetime inputs; use `DateField` / `TimeField`.
 
 ### Approved changes from the handoff (`design/DESIGN.md`)
-Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar.
+Departure Mono replaces Pixelify Sans · custom transparent title bar, window buttons only · the clock moved to the sidebar foot (Doto 34px) · plain empty states (no dashed box) · 16 tones + custom colors · gray square scrollbars · Sonner-style toast stack · centered content columns · side panels run full height under the title bar · own date & time fields instead of the native pickers (Monday-first calendar, 24-hour typed or picked times).
 
 ### Deliberate system choices (not defects)
 These are part of the design and audits must not flag them: the monospace (pixel) UI font; small uppercase tracked section labels; numbered protocol steps (`01…`); 1px hairline row dividers and input/tile borders.

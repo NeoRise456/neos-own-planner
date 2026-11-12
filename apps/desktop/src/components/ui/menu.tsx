@@ -65,7 +65,8 @@ export const PopoverContent = forwardRef<ElementRef<typeof P.Content>, Component
         sideOffset={sideOffset}
         align={align}
         className={cn(
-          "z-[60] rounded-card border border-ink-line bg-ink-well p-1 text-fg outline-none animate-[pop-in_.14s_var(--ease-snap)]",
+          // Above dialogs (z 70): pickers open from inside them.
+          "z-[80] rounded-card border border-ink-line bg-ink-well p-1 text-fg outline-none animate-[pop-in_.14s_var(--ease-snap)]",
           className,
         )}
         {...props}
