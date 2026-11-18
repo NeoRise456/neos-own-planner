@@ -1,10 +1,12 @@
-# Planner — Full Plan (v8)
+# Planner — Full Plan (v9)
 
 > **Definitions (what we need, no technology):**
 > - [TASK.md](TASK.md) — the Task: fields, kinds, states, time-runs-out rules, ticking, moving, cancelling
 > - [SYSTEMS.md](SYSTEMS.md) — Routines, Routine entries, Protocols
 
 > **v8 (2026-11-11):** the data layer is now **PowerSync** (SQLite on every device, synced later through a self-hosted server), not Rust + SeaORM. Local only first; sync is designed in but switched off (section 7).
+
+> **v9 (2026-11-17):** **v0.1 is out — the first working desktop app for Windows** (phases 0–5). The plan after it changed: first fix what daily use of v0.1 turned up on desktop (phase 6), then the **Android app together with sync** (phase 7), since a second device is what sync is for. Web moves after them.
 
 ## 1. Core idea
 **One kind of thing — the Task: a single real-life action that's done, not done, missed or cancelled.**
@@ -15,11 +17,13 @@
 Views: **Todo**, **Calendar**, **Routines**, **Protocols**, **Settings** (see section 12).
 
 ## 2. Current phase
-**Desktop only (Windows), one device, local only.** The UI is built on mock data; next come the core rules, then the local data layer.
+**v0.1 is done: a working desktop app (Windows), one device, local only.** Tasks, tags, routines and protocols are all on real data (phases 0–5, section 14).
+
+**Now: phase 6, desktop fixes** — the problems found using v0.1 day to day, plus the desktop extras. **Next: phase 7, the Android app and sync.**
 
 The data layer is built **sync-ready** (section 7) so turning sync on later needs no data migration.
 
-Not now: sync switched on, login, reminders & notifications, backup & export.
+Not now: reminders & notifications, backup & export.
 
 ---
 
@@ -29,9 +33,9 @@ Not now: sync switched on, login, reminders & notifications, backup & export.
 
 | When | Platform | Tech |
 |---|---|---|
-| **Now** | **Desktop (Windows)** | **Tauri 2** + React + TypeScript (+ a thin Rust shell) |
-| Later | Sync + login | **Self-hosted PowerSync** + Postgres + own write API + Better Auth (section 7) |
-| Later | Android | React Native (Expo), APK — same `core` and `data` packages |
+| **Now** (v0.1 ✅) | **Desktop (Windows)** | **Tauri 2** + React + TypeScript (+ a thin Rust shell) |
+| Next (phase 7) | Android | React Native (Expo), APK — same `core` and `data` packages |
+| Next (phase 7) | Sync + login | **Self-hosted PowerSync** + Postgres + own write API + Better Auth (section 7) |
 | Later | Web | React — same `core` and `data` packages |
 
 ## 4. Desktop shell — Tauri 2
@@ -119,7 +123,7 @@ Not now: sync switched on, login, reminders & notifications, backup & export.
 
 **Why it changed from Rust + SeaORM:** PowerSync owns the local SQLite database, so a Rust data layer would have been rewritten when sync arrived. Doing it in TypeScript now also means Android and web reuse it instead of rewriting the queries.
 
-## 7. Sync & accounts (later — designed now, switched off)
+## 7. Sync & accounts (phase 7 — designed now, switched off)
 
 ```
  Device: SQLite (PowerSync client) ──── reads: streamed rows ◀── PowerSync Service ◀─ logical replication ─┐
@@ -197,14 +201,15 @@ neos-own-planner/                 pnpm monorepo
     core/                         TypeScript rules (+ Vitest)
     data/                         PowerSync schema, repositories, (later) connector
   apps/
-    desktop/
+    desktop/                      (v0.1)
       src/                        React UI
         routes/                   TanStack Router pages (todo, calendar, routines…)
         components/
       src-tauri/                  Rust shell: window, tray, shortcuts, capabilities,
                                   the PowerSync plugin (+ the sync connector in phase 7)
-    server/                       (later) write API + Better Auth
-  infra/                          (later) docker-compose: postgres, powersync-service, server;
+    mobile/                       (phase 7) React Native (Expo), Android
+    server/                       (phase 7) write API + Better Auth
+  infra/                          (phase 7) docker-compose: postgres, powersync-service, server;
                                   sync streams config
 ```
 
@@ -280,7 +285,7 @@ Tag >──────────────────────< Task, R
 - Ticking after the time ran out: *Done now / Done on time / Pick a time*
 - Any task: move, cancel / uncancel, tick / untick, edit, delete
 
-## 14. Build phases (desktop)
+## 14. Build phases
 
 | Phase | What | Done when |
 |---|---|---|
@@ -291,10 +296,15 @@ Tag >──────────────────────< Task, R
 | **3. Todo view** ✅ | Sections, ticking with done_at options, day navigation (‹ › and a calendar on the date), history (past days; editable done time), tag filter (no routine filter: routine copies carry the routine's tags, so the tag filter covers them) · tags managed in Settings, searchable tag box | Usable as your daily todo |
 | **4. Calendar view** ✅ | Month/week, blocks (side by side when they overlap), during-the-day strip, now line, deadlines, click-to-create, tag filter — one-offs; routine tasks join in phase 5 | Usable for planning a week |
 | **5. Routines & protocols** ✅ | Routines (draft → publish, end, back to draft, delete, duplicate, dates), entries (every rule, times or count, versions from today on), routine tasks in Todo and Calendar (touch-to-save, "Water 2/4", moved from…), consistency; protocols (steps, status, delete rules, in entries and one-off tasks, shown in the task panel) | Your uni & exercise routines live in the app |
-| **6. Desktop extras** | Tray, global quick-add shortcut, window-state, desktop-access features | Feels like a real desktop app |
-| **7. Sync & login** | `apps/server` (write API + Better Auth), `infra/` (Postgres + PowerSync Service), sync streams, desktop login | A task ticked on one device shows on another; offline edits upload on reconnect |
 
-Later: Android → web (both reuse `core` and `data`).
+**v0.1 (2026-11-17) = phases 0–5: the first working desktop app for Windows.** ✅
+
+| Phase | What | Done when |
+|---|---|---|
+| **6. Desktop fixes** ← now | The problems found using v0.1 day to day; then the desktop extras: tray, global quick-add shortcut, window-state, desktop-access features | v0.1's known problems are gone; feels like a real desktop app |
+| **7. Mobile + sync** | `apps/mobile` (Android, React Native / Expo) on the same `core` and `data`; `apps/server` (write API + Better Auth), `infra/` (Postgres + PowerSync Service), sync streams, login on desktop and phone | A task ticked on the phone shows on the PC and back; offline edits upload on reconnect |
+
+Later: journaling, web (reuses `core` and `data`).
 
 ## 15. Product decisions
 - Task = single action; **never repeats**; same unit everywhere

@@ -6,11 +6,11 @@
 
 web
 
-Desktop app for Windows built with Tauri 2: the UI is a React web app in WebView2 (Chromium), in a custom frameless window. Android (React Native) and a web version come later; this record covers the product on every platform.
+Desktop app for Windows built with Tauri 2: the UI is a React web app in WebView2 (Chromium), in a custom frameless window. Version 0.1 (the first working desktop version) is done. An Android app (React Native) with sync between devices comes next, a web version later; this record covers the product on every platform.
 
 ## Users
 
-Built for its author first, for daily personal planning on a Windows PC, and meant to become a product other people use later (Android, web and sync are planned). Design for a stranger opening it for the first time, not only for the author.
+Built for its author first, for daily personal planning on a Windows PC, and meant to become a product other people use later (Android with sync is next, web after it). Design for a stranger opening it for the first time, not only for the author.
 
 The example routines in the docs and mock data ("Uni — Term 1", "Exercise plan", "Morning routine", the Shower protocol) are illustrations of what the product can hold, not the author's real content.
 
@@ -27,7 +27,7 @@ An extended todo app that is easy to use and lets you set up recurring tasks for
 - Views: Todo (today by default, day by day), Calendar (week and month), Routines, Protocols, Settings.
 - Daily loop: open Todo, tick tasks, add quick one-offs, open a task to see its protocol and routine.
 - Planning loop: Calendar for the week; Routines to set up or end the repeating parts of life.
-- Desktop-first, one device for now. Phase 6 adds tray, global quick-add shortcut and window state.
+- Desktop-first, one device for now. Phase 6 fixes what daily use of v0.1 turned up and adds tray, global quick-add shortcut and window state; phase 7 adds the Android app and sync.
 
 ## Capabilities and Constraints
 
@@ -38,9 +38,9 @@ An extended todo app that is easy to use and lets you set up recurring tasks for
 - **Protocol**: a shared, ordered list of plain-text steps; a reminder, never run, timed or checked off.
 - **Settings**: time zone (UTC offset), which moves "now", never the tasks' times.
 - Definitions live in `docs/PLAN.md`, `docs/TASK.md` and `docs/SYSTEMS.md`; they win over anything here.
-- Current state: the desktop UI runs on mock data only; rules go in `packages/core`, data in SQLite on the device through PowerSync, synced later through a self-hosted server (later phases).
+- Current state: v0.1, the desktop app on real data (tasks, tags, routines, protocols). Rules live in `packages/core`, data in SQLite on the device through PowerSync, synced later through a self-hosted server (phase 7).
 - **Planned, undecided:** journaling. Its shape and how it relates to tasks are not designed yet; do not invent it.
-- Not now: sync, reminders/notifications, backup/export, priority, subtasks.
+- Not now: reminders/notifications, backup/export, priority, subtasks.
 
 ## Brand Commitments
 
