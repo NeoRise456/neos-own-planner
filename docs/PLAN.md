@@ -315,7 +315,7 @@ Later: **Mac and Linux** (after the phone app: same code, built per system, e.g.
 | Overlapping blocks side by side were too thin to read | Nested like Google Calendar: a task inside a longer one sits on it, shifted right (stacked cards + hover card, then one shared block, were tried and dropped); a crowded day gets a wider column, up to 2× |
 | The task panel only closed with its ✕ | A click outside it closes it |
 | The month view was full of repeating routine tasks | Fills the window; deadlines and one-offs first, routines one line each, "+N more" |
-| Picking a time from columns of numbers | Typed time field; ↑ / ↓ change the hour or minutes under the cursor |
+| Picking a time from columns of numbers | Typed time field; ↑ / ↓ change the hour or minutes under the cursor; clicking it opens two looping wheels (hours, minutes) |
 | A tag was made by just leaving the tag box | Only Enter (or a click) adds a tag |
 | The two-letter glyph before titles said nothing | Gone (task rows, panel, calendar, routine and protocol headers) |
 | Removing an entry / deleting a routine left the dialog open | Fixed |
