@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Task, calendarDay, calendarWeek, layoutBlocks, slotAt } from "../src";
+import { type Task, calendarDay, calendarWeek, dayWidth, layoutBlocks, nestBlocks, slotAt } from "../src";
 
 const TODAY = "2026-11-11"; // Wed
 const t = (id: string, fields: Partial<Task> = {}): Task => ({ id, title: id, tags: [], ...fields });
@@ -52,7 +52,7 @@ describe("what a calendar day shows", () => {
   });
 });
 
-describe("overlapping blocks share the width", () => {
+describe("overlapping blocks: lanes (stacked in the calendar)", () => {
   const b = (id: string, start: number, end: number) => ({ task: t(id), start, end, hasDuration: true });
   const lanes = (bs: ReturnType<typeof b>[]) => layoutBlocks(bs).map((x) => `${x.task.id}:${x.lane}/${x.lanes}`);
 
@@ -66,6 +66,61 @@ describe("overlapping blocks share the width", () => {
 
   it("touching blocks don't overlap", () => {
     expect(lanes([b("a", 540, 600), b("b", 600, 660)])).toEqual(["a:0/1", "b:0/1"]);
+  });
+
+  it("same start and length: a cancelled block goes under the live one (lane 0)", () => {
+    const cancelled = { ...b("x", 540, 720), task: t("x", { cancelledAt: "2026-11-10T08:00-05:00" }) };
+    expect(lanes([b("live", 540, 720), cancelled])).toEqual(["x:0/2", "live:1/2"]);
+  });
+});
+
+describe("overlapping blocks nest (like Google Calendar)", () => {
+  const b = (id: string, start: number, end: number) => ({ task: t(id), start, end, hasDuration: true, lane: 0, lanes: 1 });
+  const nest = (bs: ReturnType<typeof b>[]) => nestBlocks(bs).map((x) => `${x.task.id}:d${x.depth} ${x.col}/${x.cols}`);
+
+  it("a task that starts inside a longer one sits on it, one level in; the long one stays full width", () => {
+    // Recuperación 12:00–14:00 with check food 12:30 and eat 13:00 inside it
+    expect(nest([b("recup", 720, 840), b("food", 750, 765), b("eat", 780, 810)])).toEqual(["recup:d0 0/1", "food:d1 0/1", "eat:d1 0/1"]);
+  });
+
+  it("tasks that start (almost) together and are about as long go side by side", () => {
+    expect(nest([b("calc", 540, 720), b("phys", 540, 660)])).toEqual(["calc:d0 0/2", "phys:d0 1/2"]);
+    expect(nest([b("a", 540, 720), b("b", 555, 700)])).toEqual(["a:d0 0/2", "b:d0 1/2"]); // 15 min later: still together
+  });
+
+  it("a short task starting with a long one nests on it, so the long one keeps the column", () => {
+    expect(nest([b("recup", 720, 840), b("food", 720, 735), b("eat", 780, 810)])).toEqual(["recup:d0 0/1", "food:d1 0/1", "eat:d1 0/1"]);
+  });
+
+  it("nesting goes deeper only while the outer ones still run; apart again after", () => {
+    expect(nest([b("day", 540, 900), b("meet", 600, 720), b("call", 660, 690), b("lunch", 780, 840), b("free", 960, 990)])).toEqual([
+      "day:d0 0/1",
+      "meet:d1 0/1",
+      "call:d2 0/1",
+      "lunch:d1 0/1",
+      "free:d0 0/1",
+    ]);
+  });
+});
+
+describe("a crowded day gets wider", () => {
+  const b = (id: string, start: number, end: number) => ({ task: t(id), start, end, hasDuration: true, lane: 0, lanes: 1 });
+
+  it("a normal day, or one with a task nested one level in, keeps the normal width", () => {
+    expect(dayWidth(nestBlocks([b("a", 540, 600), b("b", 660, 720)]))).toBe(1);
+    expect(dayWidth(nestBlocks([b("recup", 720, 840), b("eat", 780, 810)]))).toBe(1);
+    expect(dayWidth(nestBlocks([b("calc", 540, 720), b("phys", 540, 660)]))).toBe(1); // two side by side: half each
+    expect(dayWidth([])).toBe(1);
+  });
+
+  it("grows until its narrowest block is readable", () => {
+    // Wed 18: Recuperación 12:00–14:00, check food and food 2 both at 12:00, side by side on it
+    expect(dayWidth(nestBlocks([b("recup", 720, 840), b("check", 720, 740), b("food2", 720, 735)]))).toBe(1.67);
+  });
+
+  it("but never past two normal days", () => {
+    const deep = nestBlocks([b("a", 540, 900), b("b", 600, 840), b("c", 660, 780), b("d", 700, 760), b("e", 700, 750), b("f", 700, 745)]);
+    expect(dayWidth(deep)).toBe(2);
   });
 });
 

@@ -17,14 +17,14 @@ import {
 import type { StoredEntry } from "@planner/data";
 import { useData, useLive } from "@planner/data/react";
 import { useClock } from "@/lib/clock";
-import { act, useProtocolMap, useRoutineModel } from "@/lib/data-hooks";
+import { act, actOk, useProtocolMap, useRoutineModel } from "@/lib/data-hooks";
 import { glyphOf } from "@/lib/glyph";
 import { entryLabel, periodLabel, statusLabel } from "@/lib/routine-view";
 import { type Tone, toneHex } from "@/lib/tones";
 import { Button } from "@/components/ui/button";
 import { Chip, EmptyState, Label, Loader, Progress } from "@/components/ui/bits";
 import { CopyIcon, PlusIcon, TrashIcon } from "@/components/ui/icons";
-import { Glyph, GlyphTile } from "@/components/ui/task-visuals";
+import { ToneMark } from "@/components/ui/task-visuals";
 import { ConfirmDialog, DatesDialog, DuplicateDialog, EditRoutineDialog, EntryDialog } from "@/components/app/dialogs";
 
 export const Route = createFileRoute("/routines/$routineId")({ component: RoutinePage });
@@ -88,7 +88,7 @@ function RoutinePage() {
     <main className="min-w-0 flex-1 px-12 pt-11 pb-20">
       <div className="mx-auto flex max-w-[680px] flex-col">
         <div className="flex items-center gap-5">
-          <GlyphTile glyph={glyphOf(routine.title)} tone={tone} filled={!ended && !draft} dim={ended} size={76} glyphSize={36} radius={14} />
+          <ToneMark tone={tone} filled={!ended && !draft} dim={ended} size={18} />
           <div className="flex min-w-0 flex-col gap-1.5">
             <h1 className="read m-0 text-[34px] leading-[38px] font-extrabold tracking-[-.02em] break-words text-fg-white">{routine.title}</h1>
             {routine.purpose && <span className="read text-[17px] text-fg-secondary">{routine.purpose}</span>}
@@ -271,7 +271,7 @@ function RoutinePage() {
         }
         confirmLabel={draft ? "Delete draft" : "Delete routine"}
         onConfirm={async () => {
-          if (!(await act(repos!.routines.remove(routine.id), draft ? "Draft deleted." : "Routine deleted."))) return;
+          if (!(await actOk(repos!.routines.remove(routine.id), draft ? "Draft deleted." : "Routine deleted."))) return;
           navigate({ to: "/routines" });
         }}
       />
@@ -330,11 +330,6 @@ function EntryRow({
       disabled={locked}
       className="-mx-3 box-border flex min-h-[68px] w-[calc(100%+24px)] items-center gap-[14px] rounded-drop border-b border-ink-line-faint px-3 py-2.5 text-left transition-colors enabled:hover:bg-ink-hover"
     >
-      <span aria-hidden className="flex size-[38px] shrink-0 items-center justify-center rounded-card border border-ink-line">
-        <Glyph size={17} color={tone}>
-          {glyphOf(title)}
-        </Glyph>
-      </span>
       <span className="flex min-w-0 flex-auto flex-col gap-[3px]">
         <span className="read text-[16px] font-bold text-fg-white">{title}</span>
         <span className="font-ui text-[11px] text-fg-label">{label}</span>

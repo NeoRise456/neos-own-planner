@@ -86,6 +86,13 @@ export function usePalette(): Palette {
  * Runs a repository action; a refusal or failure becomes a toast instead of an
  * unhandled error. Resolves to the result, or undefined when it failed.
  */
+/** Like `act`, for when only success matters (also for actions that return nothing): true when it worked. */
+export async function actOk(action: Promise<unknown>, onDone?: string): Promise<boolean> {
+  let ok = false;
+  await act(action.then(() => (ok = true)), onDone);
+  return ok;
+}
+
 export async function act<T>(action: Promise<T>, onDone?: string | ((value: T) => void)): Promise<T | undefined> {
   try {
     const value = await action;

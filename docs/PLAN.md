@@ -23,7 +23,7 @@ Views: **Todo**, **Calendar**, **Routines**, **Protocols**, **Settings** (see se
 
 The data layer is built **sync-ready** (section 7) so turning sync on later needs no data migration.
 
-Not now: reminders & notifications, backup & export.
+Not now: backup & export. **Notifications come with the phone app (phase 7)**, Mac and Linux after it.
 
 ---
 
@@ -301,10 +301,32 @@ Tag >──────────────────────< Task, R
 
 | Phase | What | Done when |
 |---|---|---|
-| **6. Desktop fixes** ← now | The problems found using v0.1 day to day; then the desktop extras: tray, global quick-add shortcut, window-state, desktop-access features | v0.1's known problems are gone; feels like a real desktop app |
+| **6. Desktop fixes** ← now | The problems found using v0.1 day to day (below); then the desktop extras: tray, global quick-add shortcut, window-state, desktop-access features | v0.1's known problems are gone; feels like a real desktop app |
 | **7. Mobile + sync** | `apps/mobile` (Android, React Native / Expo) on the same `core` and `data`; `apps/server` (write API + Better Auth), `infra/` (Postgres + PowerSync Service), sync streams, login on desktop and phone | A task ticked on the phone shows on the PC and back; offline edits upload on reconnect |
 
-Later: journaling, web (reuses `core` and `data`).
+Later: **Mac and Linux** (after the phone app: same code, built per system, e.g. on GitHub Actions; the title bar needs the Mac window buttons), journaling, web (reuses `core` and `data`).
+
+**Phase 6, from two weeks of daily use (2026-11-25):**
+
+| Found | Change |
+|---|---|
+| Missed tasks you can't do anymore hang in Missed | Two kinds of missed (TASK.md "Missed tasks"): things at a time stay on their day; owed things follow you until done, cancelled, deleted or **let go** (`let_go_at`) |
+| Clicking the calendar made tasks by accident | The calendar is for looking; **Add mode** makes tasks from the grid (no "New task" button there) |
+| Overlapping blocks side by side were too thin to read | Nested like Google Calendar: a task inside a longer one sits on it, shifted right (stacked cards + hover card, then one shared block, were tried and dropped); a crowded day gets a wider column, up to 2× |
+| The task panel only closed with its ✕ | A click outside it closes it |
+| The month view was full of repeating routine tasks | Fills the window; deadlines and one-offs first, routines one line each, "+N more" |
+| Picking a time from columns of numbers | Typed time field; ↑ / ↓ change the hour or minutes under the cursor |
+| A tag was made by just leaving the tag box | Only Enter (or a click) adds a tag |
+| The two-letter glyph before titles said nothing | Gone (task rows, panel, calendar, routine and protocol headers) |
+| Removing an entry / deleting a routine left the dialog open | Fixed |
+| A task at 23:59 was cut off | Room under 24:00 |
+| One side of the window had no border | The app draws its own border |
+| The installed program was `desktop.exe` named "Planner" | **NeoPlanner** (`NeoPlanner.exe`, installs to `%LOCALAPPDATA%\NeoPlanner`); the data folder stays `com.neo.planner` |
+| "Open when the computer starts" didn't start it | The old install had no startup entry at all; tested end to end in a NeoPlanner release build (registered, launched like at sign-in, removed) |
+
+Held for later: **right-click menus** (task actions without opening the panel, "New task at …" on empty calendar space; the places are listed in the 2026-11-25 notes) — rarely used, so not now. Right-click still shows the WebView's own menu.
+
+**Notifications (phase 7, designed now):** each device sets its own alarms from the tasks it has (Android schedules them, so they fire with the app closed and the PC asleep); ticking on one device syncs and the other drops its alarm. A task made on the PC while the phone is offline reaches the phone only when it syncs: if that turns out to matter, **server push** is a small module in the same backend as login (`apps/server`), using the logged-in user only to know which phone to send to. Settings decide when they fire (at the start, at the deadline, some minutes before).
 
 ## 15. Product decisions
 - Task = single action; **never repeats**; same unit everywhere

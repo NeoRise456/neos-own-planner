@@ -137,6 +137,25 @@ describe("ticking & cancelling", () => {
   });
 });
 
+describe("letting a missed task go", () => {
+  it("let_go_at is saved; it leaves today's Missed list and Undo brings it back", async () => {
+    const t = await repos.tasks.create({ title: "Homework", dueDate: "2026-11-10" });
+    await expectInvalid(repos.tasks.takeBack(t.id), "not_let_go");
+    const gone = await repos.tasks.letGo(t.id);
+    expect(gone.letGoAt).toBe("2026-11-11T10:00+01:00");
+    expect(await row(t.id)).toMatchObject({ let_go_at: "2026-11-11T10:00+01:00" });
+    expect(todoForDay([gone], "2026-11-11", clock).missed).toEqual([]);
+    const back = await repos.tasks.takeBack(t.id);
+    expect(back.letGoAt).toBeUndefined();
+    expect(await row(t.id)).toMatchObject({ let_go_at: null });
+  });
+
+  it("a task that isn't in the Missed list can't be let go", async () => {
+    const t = await repos.tasks.create({ title: "Meeting", startDate: "2026-11-10", startTime: "15:00", duration: 60 });
+    await expectInvalid(repos.tasks.letGo(t.id), "not_in_missed");
+  });
+});
+
 describe("deleting", () => {
   it("a one-off is removed, and restore puts the same task back in its place", async () => {
     const t = await repos.tasks.create({ title: "Buy milk", tags: ["x"] });

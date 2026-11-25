@@ -43,7 +43,7 @@ function minutesNote(minutes: number, untimed: number): string {
 }
 
 function sectionNote(key: OpenSection, tasks: Task[]): string {
-  if (key === "missed") return "still tickable";
+  if (key === "missed") return "still tickable, or let go";
   if (key === "anytime") return "no date";
   const s = daySummary(tasks);
   return minutesNote(key === "scheduled" ? s.scheduledMinutes : s.floatingMinutes, s.untimed);
@@ -223,7 +223,7 @@ function TodoPage() {
               <section key={key} className="mt-[30px] flex flex-col">
                 <SectionHeader label={label} note={sectionNote(key, todo[key])} labelClassName={key === "missed" ? "text-fg-secondary" : undefined} />
                 {rows.map(({ view: v, count }) => (
-                  <TaskRow key={v.task.id} view={v} count={count} selected={v.task.id === openTaskId} />
+                  <TaskRow key={v.task.id} view={v} count={count} selected={v.task.id === openTaskId} missedList={key === "missed"} />
                 ))}
               </section>
             );

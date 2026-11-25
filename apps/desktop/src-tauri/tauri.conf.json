@@ -1,6 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "Planner",
+  "productName": "NeoPlanner",
+  "mainBinaryName": "NeoPlanner",
   "version": "0.1.0",
   "identifier": "com.neo.planner",
   "build": {
@@ -12,7 +13,7 @@
   "app": {
     "windows": [
       {
-        "title": "Planner",
+        "title": "NeoPlanner",
         "width": 1360,
         "height": 900,
         "minWidth": 900,

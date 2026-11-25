@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { type Clock, type Task, calendarDay, countProgress, daySummary, filterByTag, filterTodoDay, nextCopyToTick, quickAddFields, showsOn, todoForDay } from "../src";
+import { type Clock, type Task, calendarDay, editTask, followsWhenMissed, inMissedList, letGoTask, moveTask, takeBackTask, countProgress, daySummary, filterByTag, filterTodoDay, nextCopyToTick, quickAddFields, showsOn, todoForDay } from "../src";
 
 const now: Clock = { at: "2026-11-11T10:00", offset: 60 };
 const TODAY = "2026-11-11";
@@ -188,5 +188,47 @@ describe("a timed task due on a later day", () => {
       [0, 1, 0],
       [0, 0, 1],
     ]);
+  });
+});
+
+describe("missed tasks: which ones follow you (TASK.md \"Missed tasks\")", () => {
+  const meeting = t("meeting", { startDate: "2026-11-10", startTime: "15:00", duration: 60 }); // happens at a time
+  const homework = t("homework", { startDate: "2026-11-09", startTime: "16:00", duration: 60, dueDate: "2026-11-10" }); // owed by Tue
+  const email = t("email", { startDate: "2026-11-10" }); // sometime that day
+  const tasks = [meeting, homework, email];
+
+  it("a missed task with a start and no deadline stays on its own day; owed ones follow you", () => {
+    expect(followsWhenMissed(meeting)).toBe(false);
+    expect(followsWhenMissed(homework)).toBe(true);
+    expect(followsWhenMissed(email)).toBe(true);
+    const today = todoForDay(tasks, TODAY, now);
+    expect(ids(today.missed)).toEqual(["email", "homework"]); // both ran out at the end of Tue → by title
+    expect([...today.scheduled, ...today.during].some((x) => x.id === "meeting")).toBe(false);
+    expect(ids(todoForDay(tasks, "2026-11-10", now).scheduled)).toContain("meeting");
+  });
+
+  it("“Let it go”: it stays missed, on its own day, but leaves the Missed list", () => {
+    const r = letGoTask(email, now);
+    expect(r.ok && r.value.letGoAt).toBe("2026-11-11T10:00+01:00");
+    const gone = r.ok ? r.value : email;
+    expect(inMissedList(gone, now.at)).toBe(false);
+    expect(ids(todoForDay([gone], TODAY, now).missed)).toEqual([]);
+    expect(ids(todoForDay([gone], "2026-11-10", now).during)).toEqual(["email"]);
+    const back = takeBackTask(gone);
+    expect(back.ok && inMissedList(back.value, now.at)).toBe(true);
+  });
+
+  it("only a task in the Missed list can be let go", () => {
+    expect(letGoTask(meeting, now).ok).toBe(false);
+    expect(letGoTask(t("later", { startDate: "2026-11-12" }), now).ok).toBe(false);
+    expect(letGoTask({ ...email, routineEntryId: "e", occurrenceDate: "2026-11-10", occurrenceSlot: 1 }, now).ok).toBe(false);
+  });
+
+  it("a new date or time clears “let go”; other edits keep it", () => {
+    const gone = { ...email, letGoAt: "2026-11-11T10:00+01:00" };
+    const retitled = editTask(gone, { title: "Reply to the email" });
+    expect(retitled.ok && retitled.value.letGoAt).toBe("2026-11-11T10:00+01:00");
+    const moved = moveTask(gone, { startDate: "2026-11-12" });
+    expect(moved.ok && moved.value.letGoAt).toBeUndefined();
   });
 });

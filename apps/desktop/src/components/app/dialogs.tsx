@@ -33,7 +33,7 @@ import type { StoredEntry } from "@planner/data";
 import { useRepos } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { useClock } from "@/lib/clock";
-import { act, useTagMap } from "@/lib/data-hooks";
+import { act, actOk, useTagMap } from "@/lib/data-hooks";
 import { MONTHS, WEEKDAY_SHORT, nextDays } from "@/lib/routine-view";
 import { dayShort } from "@/lib/task-view";
 import { isCustomTone, luminance, TONE_NAMES, toneHex, type Tone } from "@/lib/tones";
@@ -563,7 +563,7 @@ export function EntryDialog({ routine, entry, ...p }: OpenProps & { routine: Rou
 
   async function remove() {
     if (!entry) return;
-    if (!(await act(repos.routines.removeEntry(entry.id)))) return;
+    if (!(await actOk(repos.routines.removeEntry(entry.id)))) return;
     p.onOpenChange(false);
     toast(draft ? "Entry removed." : "Entry removed. Its tasks stop from today on; the past stays.");
   }

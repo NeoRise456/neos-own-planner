@@ -1,6 +1,6 @@
 /**
  * The Task — TASK.md. Kinds, time-runs-out, states, validation, and the actions
- * (tick, untick, cancel, uncancel, move, edit, delete). Everything here is pure:
+ * (tick, untick, cancel, uncancel, move, edit, delete, let go). Everything here is pure:
  * actions return a new task (or the reasons they can't), they never save.
  */
 import {
@@ -42,6 +42,11 @@ export interface Task {
   /** When it was ticked in the app. Automatic. */
   loggedAt?: Moment;
   cancelledAt?: Moment;
+  /**
+   * When you let a missed task go ("Let it go" in Missed): it stays missed, in its day's
+   * history, but stops following you in today's Missed list. Changing its date or time clears it.
+   */
+  letGoAt?: Moment;
   // Only routine copies:
   routineEntryId?: string;
   /** The day the entry originally placed it on (kept when moved). */
@@ -157,7 +162,7 @@ export function validateTask(task: Task): Check {
     const v = task[field];
     if (v !== undefined && !isLocalTime(v)) errors.push(issue("invalid_time", `${field} isn't a valid time.`, field));
   }
-  for (const field of ["doneAt", "loggedAt", "cancelledAt"] as const) {
+  for (const field of ["doneAt", "loggedAt", "cancelledAt", "letGoAt"] as const) {
     const v = task[field];
     if (v !== undefined && !isMoment(v)) errors.push(issue("invalid_moment", `${field} isn't a valid moment.`, field));
   }
@@ -237,8 +242,13 @@ export function createTask(id: string, fields: TaskFields): Result<Task> {
 export function editTask(task: Task, changes: Partial<TaskFields>): Result<Task> {
   const c = normalizeFields(changes);
   const next = withoutUndefined<Task>({ ...task, ...c, tags: c.tags ?? task.tags });
+  // A new date or time is a new chance: a task you had let go follows you again if it's missed.
+  if (WHEN.some((k) => k in c && c[k] !== task[k])) delete next.letGoAt;
   return fromCheck(next, validateTask(next));
 }
+
+/** The fields that decide when a task's time runs out. */
+const WHEN = ["startDate", "startTime", "dueDate", "dueTime", "duration"] as const;
 
 /**
  * Moving = changing the date/time. No new state; a routine copy keeps its occurrence
@@ -270,6 +280,42 @@ export function scheduleForMove(task: Task, day: LocalDate, time?: LocalTime): T
     dueDate: task.dueDate !== undefined ? addDays(task.dueDate, shift) : undefined,
     dueTime: task.dueDate !== undefined ? task.dueTime : undefined,
   };
+}
+
+// ── Missed: which ones follow you ────────────────────────────────────────
+
+/**
+ * Two kinds of missed (TASK.md "Missed tasks"):
+ * - **something that happens at a time** — a start time and no deadline (dentist 15:00, a
+ *   class): once missed it's just a fact, and it stays on its own day;
+ * - **something you still owe** — it has a deadline, or it's "sometime that day" (homework
+ *   due Fri, "reply to the email today"): once missed it **follows you** in today's Missed
+ *   list, until you do it, cancel it, delete it or let it go.
+ * Routine tasks never follow you: a missed routine task stays on its day.
+ */
+export function followsWhenMissed(task: Task): boolean {
+  return !isRoutineCopy(task) && (task.dueDate !== undefined || taskKind(task) === "floating");
+}
+
+/** In today's Missed list: missed, of the kind that follows you, and not let go. */
+export function inMissedList(task: Task, now: LocalDateTime): boolean {
+  return taskState(task, now) === "missed" && followsWhenMissed(task) && task.letGoAt === undefined;
+}
+
+/**
+ * "Let it go": the task stays missed (not done, not cancelled, not deleted) and in its day's
+ * history, but leaves the Missed list.
+ */
+export function letGoTask(task: Task, clock: Clock): Result<Task> {
+  if (!inMissedList(task, clock.at)) return fail(issue("not_in_missed", "Only a task in the Missed list can be let go."));
+  return ok({ ...task, letGoAt: nowMoment(clock) });
+}
+
+/** Undo "Let it go": back in the Missed list. */
+export function takeBackTask(task: Task): Result<Task> {
+  if (task.letGoAt === undefined) return fail(issue("not_let_go", "It wasn't let go."));
+  const { letGoAt: _g, ...rest } = task;
+  return ok(rest);
 }
 
 // ── Ticking & cancelling ─────────────────────────────────────────────────

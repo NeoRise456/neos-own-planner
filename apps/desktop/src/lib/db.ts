@@ -9,8 +9,12 @@ import { createRepositories, schema } from "@planner/data";
 import type { DataContextValue } from "@planner/data/react";
 import { currentClock } from "./clock";
 
-/** VITE_DB_FILE=planner-test.db pnpm dev → a throwaway database for trying things (dev only). */
-export const DB_FILE = import.meta.env.DEV ? (import.meta.env.VITE_DB_FILE ?? "planner-dev.db") : "planner.db";
+/**
+ * VITE_DB_FILE=planner-test.db pnpm dev → a throwaway database for trying things. It also works
+ * for a test release build (set when building), so the installed app's own file is never touched;
+ * a normal build (no VITE_DB_FILE) always uses planner.db.
+ */
+export const DB_FILE = import.meta.env.VITE_DB_FILE ?? (import.meta.env.DEV ? "planner-dev.db" : "planner.db");
 
 export async function openData(): Promise<DataContextValue> {
   if (!isTauri()) {

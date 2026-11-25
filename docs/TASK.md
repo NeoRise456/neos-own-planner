@@ -37,6 +37,7 @@ The **Task** is the basic unit of the whole planner. Everything the app shows �
 | `done_at` | no | moment | **When it was really done.** Set when ticked; editable |
 | `logged_at` | no | moment | When it was ticked in the app. Automatic |
 | `cancelled_at` | no | moment | When you cancelled it |
+| `let_go_at` | no | moment | When you let a missed task go (see "Missed tasks") |
 
 **Only for routine copies:**
 
@@ -105,7 +106,7 @@ time runs out    uncancel   (back to not done / missed)
  missed ──tick──────┘──▶ done
 ```
 
-- **Missed is just a fact**, not a to-do: it wasn't done in time. A missed class stays missed.
+- **Missed is just a fact**, not a to-do: it wasn't done in time. A missed class stays missed. Which missed tasks keep reminding you is in "Missed tasks" below.
 - **A missed task can still be ticked** — "I did it but forgot to log it" or "I did it late". Set `done_at` to when it really happened.
 - **Cancelled** is your decision ("holiday — no class", "dentist cancelled"). It never counts for or against you, and it stays in the history.
 - **Done and cancelled exclude each other.** To cancel a done task, untick it first.
@@ -121,6 +122,19 @@ The first rule that applies:
 | 2 | a start time and a duration | the end of its block | Class 09:00 + 2 h → 11:00 |
 | 3 | only a start date (± start time) | the end of that day | "Reply to email today" → midnight |
 | 4 | no date at all | never | "Buy milk" |
+
+### Missed tasks — which ones follow you
+There are two kinds of missed, and only one of them is still something you owe:
+
+| Kind | Example | Once missed |
+|---|---|---|
+| **Happens at a time**: a start time and no deadline | Dentist 15:00, a meeting, a class | Just a fact. It stays on **its own day** (greyed), like a missed routine task. It doesn't follow you. |
+| **Something you owe**: it has a deadline, or it's "sometime that day" | Homework due Fri, "reply to the email today" | It **follows you**: it shows in today's **Missed** list until you tick it, cancel it, delete it or let it go. |
+
+- Routine tasks never follow you: a missed routine task stays on its day.
+- **Let it go** (in the Missed list and the task panel): the task stays **missed**, in its day's history (not done, not cancelled, not deleted), but leaves the Missed list. It sets `let_go_at`; the toast offers Undo.
+- Giving it a new date or time (moving or editing it) clears `let_go_at`: it's a new chance, so if it's missed again it follows you again.
+- Only a task in the Missed list can be let go.
 
 ## Ticking (done)
 
@@ -200,7 +214,7 @@ Details these docs didn't settle, as `packages/core` implements them:
   - timed → its start date;
   - floating → every day from its start to its due date (only a start: that day; only a due date: from today until the due date), until it's done or cancelled, then only on the day that happened (kept inside its range);
   - anytime → today while open; once done or cancelled, the day that happened.
-- **The Missed section only exists on today** and only holds **one-off** tasks. On past days, a missed task shows in its normal section, greyed (history).
+- **The Missed section only exists on today** and only holds **one-off** tasks that follow you (see "Missed tasks"). On past days, a missed task shows in its normal section, greyed (history).
 - **Day total** counts the day's timed and floating tasks, done ones included (it's the planned time). "+N untimed" = dated tasks with no duration.
 - **"Water 2/4"**: a cancelled copy doesn't count, so 1 done + 1 cancelled of 4 reads 1/3. Ticking the row ticks the first open copy.
 - **Tags** match by name ignoring case and extra spaces: typing "uni" reuses "Uni".
@@ -222,7 +236,7 @@ Details these docs didn't settle, as `packages/core` implements them:
 ## Decided while building tags
 
 - **Tags are their own records** (id, name, color); a task keeps a list of tag ids. Renaming or recoloring a tag changes it on every task.
-- **The tag box searches as you type:** exact name first, then names that start with the text, then names that contain it. The first match is highlighted, so Enter takes it; ↑ / ↓ pick another. When no tag has exactly that name, the list ends with "Create “name”".
+- **The tag box searches as you type:** exact name first, then names that start with the text, then names that contain it. The first match is highlighted, so Enter takes it; ↑ / ↓ pick another. When no tag has exactly that name, the list ends with "Create “name”". **A tag is only added with Enter (or a click on the list)**: leaving the box with text in it adds nothing (phase 6).
 - **A new tag is made when the task is saved**, in the same write: if the task is refused, no tag is created. Cancelling the dialog makes nothing. In the task panel there's no Save button, so a pick (or a new name) is saved at once.
 - **Settings → Tags** lists every tag with how many tasks have it (open or closed). Rename in place; a name another tag already has offers to **merge** the two (every task gets the other tag, in the same place in its list, never twice; can't be undone, so it asks first). **Deleting a tag** asks first ("It comes off the 3 tasks that have it; the tasks themselves stay"), then takes it off every task; the tasks stay. The toast still offers Undo, which puts the same tag back on the same tasks in the same place (the first tag decides a task's color).
 - **No filter by routine.** A routine's tags are copied onto every task it makes, so the tag filter covers routines.
@@ -230,7 +244,7 @@ Details these docs didn't settle, as `packages/core` implements them:
 ## Decided while building the Calendar (phase 4)
 
 - **Only dated tasks are on the calendar.** Anytime tasks (no date) live in Todo.
-- **Blocks** are timed tasks, on their start day, from the start time for their duration. A timed task with no end is drawn as a **marker** (a thin line at its start time with a small label), not a block with a made-up length. A block stops at midnight (crossing midnight isn't supported). Blocks that overlap sit **side by side**.
+- **Blocks** are timed tasks, on their start day, from the start time for their duration. A timed task with no end is drawn as a **marker** (a thin line at its start time with a small label), not a block with a made-up length. A block stops at midnight (crossing midnight isn't supported). **Overlapping tasks nest, like Google Calendar** (phase 6, after stacked cards and a shared block were tried and dropped): a task that starts inside a longer one sits on top of it, shifted right, so the long one keeps its title and left edge and every task keeps its own look ("check food 12:00" and "eat 13:00" on "Recuperación 12:00–14:00"). Tasks that start within 20 minutes of each other **and are about as long** (at least half) go side by side; a short one starting with a long one nests on it. Cancelled tasks take no room: they're laid out among themselves, behind live tasks. **A crowded day gets wider** (phase 6): when a nested or side-by-side task would be under half a normal day's width, its day grows until it isn't (at most twice as wide) and the other days of the week give up the room, so three tasks at 12:00 can all be read.
 - **The form sets a timed task's length as an end time.** With a start time, the form shows *Start time* and *End time* (the length is shown under it); without a start time it shows *Duration* (planned time, e.g. "Read, 30 min"). The task still stores a duration. Changing the start time moves the end along; removing the start time turns the length back into a duration. The end must be after the start, on the same day.
 - **"Due" is called "Deadline" in the app**: the latest it can be done, never the end of the block. It sits behind "+ Add a deadline" in the form.
 - **One task, no types — in the form too.** Fields show up as they become relevant (a start time once there's a day, an end once there's a time), and a summary line says what the task will do and when it turns missed ("Thu 12 Nov, 07:00–10:00 · missed after 10:00"), with any warning under it.
@@ -238,11 +252,12 @@ Details these docs didn't settle, as `packages/core` implements them:
 - **A timed task due on a later day** (start Mon 08:30, deadline Fri) is its block on Monday, then "during the day" on Tue–Thu ("since Mon · by Fri"), in Todo and Calendar, until it's done; on Friday it's the deadline (in Todo: during the day). Done on Wednesday → it shows on Wednesday (the block stays on Monday's calendar). Its block counts toward the planned time on Monday only.
 - **Deadlines** are tasks due that day, as a flag chip in the all-day row with the due time: a due date on its own, or the last day of a span. A task due the same day it starts isn't a flag: a timed one is just its block, a floating one is "during the day, by 12:00" (so daily routine tasks like "Vitamins, by 12:00" don't fill the row with flags).
 - **During the day** = floating tasks that show that day, the same days as in Todo (a range shows every day until it's done). On its due day the task shows as the deadline instead, never twice. The all-day row lists 3, then "+N more".
-- **The hours**: the week always shows the whole day, 00:00–24:00, and scrolls. It opens with the hour from Settings → Calendar → "Opens at" at the top (07:00 by default).
-- **Click-to-create:** clicking empty space in a day column opens a new task at that half hour, 1 hour long; the "+" in a day's all-day cell makes a task on that day with no time; "New task" in the header starts on today. The form is the full task form. With a tag filter on, the new task starts with that tag.
-- **Clicking a task** opens the same panel as in Todo (tick, move, edit). Month view: clicking a day opens its week.
+- **The hours**: the week always shows the whole day, 00:00–24:00, and scrolls, with room under 24:00 so a task at 23:59 is never cut off. It opens with the hour from Settings → Calendar → "Opens at" at the top (07:00 by default).
+- **The calendar is for looking.** Clicking the grid makes nothing, unless **Add mode** is on (phase 6; a button in the week's header, off each time you open the calendar, Esc leaves it). In Add mode, clicking empty space in a day column opens a new task at that half hour, 1 hour long, and a "+" in each day's all-day cell makes a task on that day with no time. There's no separate "New task" button in the calendar. The form is the full task form. With a tag filter on, the new task starts with that tag.
+- **Month view** (phase 6) fills the window: the weeks share its height and each day shows as many lines as fit, most useful first: deadlines, then your one-off tasks (timed by time, then the rest), then **routine tasks as one line per routine** ("Morning routine 2/5", cancelled ones don't count; a routine with a single task that day shows the task itself). Then "+N more", which lists the whole day, one task per line. Importance isn't a field: one-offs and deadlines are what you plan around, routines are habits you already know are there.
+- **Clicking a task** opens the same panel as in Todo (tick, move, edit). Clicking anywhere outside the panel closes it (in Todo too); clicking another task switches it to that task. Month view: clicking a day opens its week.
 - **Tag filter** works like Todo's, with its own selection.
 - Routine tasks join the calendar in phase 5.
 
 ## Not part of a task (for now)
-Priority, subtasks, reminders, time windows for floating tasks, crossing midnight.
+Priority, subtasks, reminders (planned with the phone app, PLAN.md §14), time windows for floating tasks, crossing midnight.

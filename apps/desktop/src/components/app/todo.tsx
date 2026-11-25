@@ -1,13 +1,12 @@
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
 import { Link } from "@tanstack/react-router";
 import { format, parseISO } from "date-fns";
-import { type Tag, type Task, dateTime, momentLocal, splitDateTime, tickOptions, toMoment } from "@planner/core";
+import { type Tag, type Task, dateTime, inMissedList, momentLocal, splitDateTime, tickOptions, toMoment } from "@planner/core";
 import { useRepos } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { toneHex } from "@/lib/tones";
 import { currentClock, useClock } from "@/lib/clock";
 import { act, useProtocolMap } from "@/lib/data-hooks";
-import { glyphOf } from "@/lib/glyph";
 import { type Palette, panelLine, toneOf, visualState, type TaskView } from "@/lib/task-view";
 import { useUi } from "@/stores/ui";
 import { Button, RoundButton } from "@/components/ui/button";
@@ -16,11 +15,33 @@ import { DateField } from "@/components/ui/date-picker";
 import { TimeField } from "@/components/ui/time-picker";
 import { CheckIcon, ChevronRightIcon, CloseIcon } from "@/components/ui/icons";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/menu";
-import { Check, Glyph, GlyphTile } from "@/components/ui/task-visuals";
+import { Check, ToneMark } from "@/components/ui/task-visuals";
 import { toast } from "@/components/ui/toast";
 import { EditTaskDialog, MoveTaskDialog } from "./task-dialogs";
 import { SidePanel } from "./side-panel";
 import { TagBox, toTagRefs } from "./tag-box";
+
+/**
+ * The task panel closes when you click outside it (in Todo and in the Calendar). Not on clicks
+ * that belong to it or open another task: its own dialogs, menus and popovers (they render
+ * outside it), the toasts, the title bar, and anything marked `data-opens-task` (a row's title,
+ * a calendar block…), which switches the panel to that task instead. While a dialog is open
+ * (Edit, Move…), clicks go to the dialog.
+ */
+function useCloseOnOutsideClick(panel: RefObject<HTMLElement | null>, close: () => void) {
+  useEffect(() => {
+    const onDown = (e: PointerEvent) => {
+      const target = e.target as Element | null;
+      if (!target || panel.current?.contains(target)) return;
+      if (document.querySelector("[role=dialog]")) return;
+      if (target.closest('[data-radix-popper-content-wrapper],[aria-label="Notifications"],header,[data-opens-task]')) return;
+      close();
+    };
+    document.addEventListener("pointerdown", onDown);
+    return () => document.removeEventListener("pointerdown", onDown);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+}
 
 /** Tick / untick / uncancel from the check box — the same everywhere a task shows. */
 function useTaskActions(task: Task) {
@@ -33,16 +54,33 @@ function useTaskActions(task: Task) {
         toast(`Cancelled “${task.title}”.`, { action: { label: "Undo", onClick: () => void act(repos.tasks.uncancel(task)) } }),
       ),
     uncancel: () => act(repos.tasks.uncancel(task), `“${task.title}” is back.`),
+    // TASK.md "Missed tasks": it stays missed on its own day, it just stops following you.
+    letGo: () =>
+      act(repos.tasks.letGo(task), () =>
+        toast(`Let go of “${task.title}”. It stays missed on its day.`, { action: { label: "Undo", onClick: () => void act(repos.tasks.takeBack(task)) } }),
+      ),
   };
 }
 
 /**
  * Task row — 48 tall, radius 8, hover #0F0F0F (DESIGN.md §3 "Task row"):
- * check · glyph (Doto 18, tone) · title (Figtree 15/600) · meta (UI 11 caps, right).
+ * check · title (Figtree 15/600) · meta (UI 11 caps, right). The check carries the tone.
+ * (The two-letter glyph that sat after the check is gone: it told you nothing the title didn't.)
  * Count tasks show one mini square per copy. Done rows sit on #0A0A0A with a grey title.
+ * In the Missed list (`missedList`), hovering the row shows "Let it go".
  */
-export function TaskRow({ view, selected, count }: { view: TaskView; selected?: boolean; count?: { done: number; of: number } }) {
-  const { task, state, tone: toneName, glyph, meta } = view;
+export function TaskRow({
+  view,
+  selected,
+  count,
+  missedList,
+}: {
+  view: TaskView;
+  selected?: boolean;
+  count?: { done: number; of: number };
+  missedList?: boolean;
+}) {
+  const { task, state, tone: toneName, meta } = view;
   const actions = useTaskActions(task);
   const openTask = useUi((s) => s.set);
   const [lateOpen, setLateOpen] = useState(false);
@@ -61,7 +99,7 @@ export function TaskRow({ view, selected, count }: { view: TaskView; selected?: 
   return (
     <div
       className={cn(
-        "-mx-3 flex min-h-12 items-center gap-3 rounded-card border border-transparent px-3 transition-colors duration-[250ms]",
+        "group -mx-3 flex min-h-12 items-center gap-3 rounded-card border border-transparent px-3 transition-colors duration-[250ms]",
         state === "done" ? "mt-0.5 bg-ink-raised" : "hover:bg-ink-hover",
         selected && "border-ink-line bg-ink-well hover:bg-ink-well",
       )}
@@ -72,11 +110,9 @@ export function TaskRow({ view, selected, count }: { view: TaskView; selected?: 
         </PopoverAnchor>
         {lateOpen && <LateTickOptions task={task} label={meta} onDone={() => setLateOpen(false)} />}
       </Popover>
-      <Glyph color={state === "missed" ? "#3A3A3A" : state === "cancelled" ? "#262626" : tone} className="w-7">
-        {glyph}
-      </Glyph>
       <button
         type="button"
+        data-opens-task
         onClick={() => openTask({ openTaskId: task.id })}
         className={cn(
           "read min-w-0 flex-1 truncate text-left text-[15px] font-semibold",
@@ -92,6 +128,17 @@ export function TaskRow({ view, selected, count }: { view: TaskView; selected?: 
             <MiniSquare key={i} color={tone} outline={i >= count.done} />
           ))}
         </span>
+      )}
+      {missedList && (
+        <Button
+          size="sm"
+          variant="ghost"
+          title="It stays missed on its day, but stops following you here"
+          className="opacity-0 transition-opacity duration-[120ms] group-hover:opacity-100 focus-visible:opacity-100"
+          onClick={() => void actions.letGo()}
+        >
+          Let it go
+        </Button>
       )}
       <span className={cn("meta", state === "todo" ? "text-fg-secondary" : "text-fg-label")}>{meta}</span>
     </div>
@@ -170,6 +217,8 @@ export function TaskPanel({ task, palette }: { task: Task; palette: Palette }) {
   const actions = useTaskActions(task);
   const clock = useClock();
   const close = () => useUi.getState().set({ openTaskId: null });
+  const panel = useRef<HTMLElement>(null);
+  useCloseOnOutsideClick(panel, close);
   const [edit, setEdit] = useState(false);
   const [move, setMove] = useState(false);
   const state = visualState(task, clock);
@@ -179,6 +228,7 @@ export function TaskPanel({ task, palette }: { task: Task; palette: Palette }) {
   return (
     <SidePanel>
       <aside
+        ref={panel}
         aria-label="Task"
         className="flex h-full w-[400px] max-w-[50%] shrink-0 animate-[panel-in_.22s_var(--ease-snap)] flex-col border-l border-ink-line-soft bg-panel"
       >
@@ -186,7 +236,9 @@ export function TaskPanel({ task, palette }: { task: Task; palette: Palette }) {
         <div aria-hidden className="h-9 shrink-0" />
         <div className="flex min-h-0 flex-1 flex-col gap-[26px] overflow-y-auto px-9 pt-10 pb-20">
           <div className="flex items-start gap-4">
-            <GlyphTile glyph={glyphOf(task.title)} tone={toneOf(task, palette)} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
+            <span className="pt-[9px]">
+              <ToneMark tone={toneOf(task, palette)} filled={state === "done"} dim={state === "missed" || state === "cancelled"} />
+            </span>
             <div className="flex min-w-0 flex-1 flex-col gap-1.5 pt-1">
               <h2
                 className={cn(
@@ -232,6 +284,11 @@ export function TaskPanel({ task, palette }: { task: Task; palette: Palette }) {
                   Cancel
                 </Button>
               )
+            )}
+            {inMissedList(task, clock.at) && (
+              <Button size="lg" variant="ghost" title="It stays missed on its day, but stops following you in Missed" onClick={() => void actions.letGo()}>
+                Let it go
+              </Button>
             )}
           </div>
 

@@ -12,11 +12,13 @@ import { Toaster } from "@/components/ui/toast";
  *  - the title bar, transparent and laid over both, so an open panel's
  *    color reaches the top of the window instead of being cut by a black strip.
  * The window itself never scrolls — the sidebar, view and panel scroll on their own.
+ * The window has no frame ("decorations": false) and Windows 10 only draws part of an edge
+ * around a frameless window, so the shell draws its own 1px border on all four sides.
  */
 function Root() {
   const [slot, setSlot] = useState<HTMLDivElement | null>(null);
   return (
-    <div className="relative flex h-full overflow-hidden bg-ink-bg text-fg">
+    <div className="relative box-border flex h-full overflow-hidden border border-ink-line bg-ink-bg text-fg">
       <Sidebar />
       <SidePanelSlot.Provider value={slot}>
         <div className="relative flex min-w-0 flex-1">

@@ -70,7 +70,7 @@ export function TagBox({
     setText("");
   }
 
-  /** Leaving the box with text in it: that exact name (never a partial match). */
+  /** Enter with no option highlighted: that exact name (never a partial match). Leaving the box adds nothing. */
   function takeTyped() {
     const name = normalizeTagName(text);
     setText("");
@@ -127,10 +127,7 @@ export function TagBox({
               onFocus={() => setOpen(true)}
               onClick={() => setOpen(true)}
               onKeyDown={onKeyDown}
-              onBlur={() => {
-                takeTyped();
-                setOpen(false);
-              }}
+              onBlur={() => setOpen(false)}
               className={cn(inputBase, "h-9 font-ui text-[13px]")}
             />
           </div>

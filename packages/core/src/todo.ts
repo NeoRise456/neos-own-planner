@@ -8,16 +8,18 @@
  *   only a due date: from today until the due date) — until it's done or cancelled,
  *   then only on the day that happened (kept inside its range)
  * - anytime → today while open; once done or cancelled, the day that happened
- * - on **today**, one-off tasks whose time ran out also show in **Missed** (and only there)
+ * - on **today**, missed tasks that follow you (TASK.md "Missed tasks": they have a deadline or
+ *   are "sometime that day", and weren't let go) show in **Missed** (and only there); a missed
+ *   task that happens at a time (start, no deadline) stays on its own day
  */
 import { type Clock, type LocalDate, clampDate, minDate, momentDate, momentToEpoch, todayOf } from "./dates";
-import { type Task, type TaskFields, dueOf, isRoutineCopy, runsOutAt, taskKind, taskState } from "./task";
+import { type Task, type TaskFields, dueOf, inMissedList, runsOutAt, taskKind, taskState } from "./task";
 
 export type TodoSectionName = "missed" | "scheduled" | "during" | "anytime" | "done" | "cancelled";
 
 export interface TodoDay {
   day: LocalDate;
-  /** One-off tasks whose time ran out (only on today). */
+  /** Missed tasks that follow you (only on today): a deadline or "sometime that day", not let go. */
   missed: Task[];
   /** Timed tasks, by start time. */
   scheduled: Task[];
@@ -70,7 +72,7 @@ export function todoForDay(tasks: Task[], day: LocalDate, now: Clock): TodoDay {
 
   for (const task of tasks) {
     const state = taskState(task, now.at);
-    if (day === today && state === "missed" && !isRoutineCopy(task)) {
+    if (day === today && inMissedList(task, now.at)) {
       out.missed.push(task);
       continue;
     }

@@ -27,6 +27,7 @@ export const TABLES = {
     done_at: "text",
     logged_at: "text",
     cancelled_at: "text",
+    let_go_at: "text",
     // Only routine copies (phase 5):
     routine_entry_id: "text",
     occurrence_date: "text",

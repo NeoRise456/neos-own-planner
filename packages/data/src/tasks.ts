@@ -20,6 +20,8 @@ import {
   quickAddFields,
   setDoneAt,
   tickTask,
+  letGoTask,
+  takeBackTask,
   uncancelTask,
   todayOf,
   untickTask,
@@ -124,6 +126,9 @@ export function taskRepository(db: Db, deps: RepoDeps) {
     untick: (ref: TaskRef) => change(ref, (t) => untickTask(t)),
     cancel: (ref: TaskRef) => change(ref, (t) => cancelTask(t, deps.clock())),
     uncancel: (ref: TaskRef) => change(ref, (t) => uncancelTask(t)),
+    /** "Let it go" (TASK.md "Missed tasks") and its undo. */
+    letGo: (ref: TaskRef) => change(ref, (t) => letGoTask(t, deps.clock())),
+    takeBack: (ref: TaskRef) => change(ref, (t) => takeBackTask(t)),
 
     /** One-offs are removed; a routine copy is cancelled instead (TASK.md "Deleting"). */
     remove(ref: TaskRef): Promise<DeleteOutcome> {

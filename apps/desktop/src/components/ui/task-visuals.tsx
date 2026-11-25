@@ -64,7 +64,23 @@ export function Glyph({
   );
 }
 
-/** Glyph tile — a square with the glyph (outline, or filled with the tone). Panels, headers, entries. */
+/**
+ * Tone mark — a small square in the tone, in front of a header's title (task panel, routine,
+ * protocol): filled = done / running, outline = not yet, grey = missed / over. The same
+ * square the sidebar uses for routines. (It replaced the two-letter glyph tile.)
+ */
+export function ToneMark({ tone, filled, dim, size = 14 }: { tone: Tone; filled?: boolean; dim?: boolean; size?: number }) {
+  const t = dim ? "#3A3A3A" : toneHex(tone);
+  return (
+    <span
+      aria-hidden
+      className="box-border block shrink-0 rounded-[3px] transition-colors duration-[350ms] ease-snap"
+      style={{ width: size, height: size, background: filled ? t : undefined, border: filled ? undefined : `2px solid ${t}` }}
+    />
+  );
+}
+
+/** Glyph tile — a square with the glyph (outline, or filled with the tone). Only on the components page now. */
 export function GlyphTile({
   glyph,
   tone,

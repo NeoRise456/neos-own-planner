@@ -5,13 +5,12 @@ import { useData, useLive } from "@planner/data/react";
 import { cn } from "@/lib/cn";
 import { useClock } from "@/lib/clock";
 import { act, useProtocolMap, useRoutineModel } from "@/lib/data-hooks";
-import { glyphOf } from "@/lib/glyph";
 import { type Tone, toneHex } from "@/lib/tones";
 import { Chip, Label, Loader } from "@/components/ui/bits";
 import { Button } from "@/components/ui/button";
 import { QuickAdd, inputBase } from "@/components/ui/field";
 import { CloseIcon, TrashIcon } from "@/components/ui/icons";
-import { GlyphTile } from "@/components/ui/task-visuals";
+import { ToneMark } from "@/components/ui/task-visuals";
 import { toast } from "@/components/ui/toast";
 import { ConfirmDialog } from "@/components/app/dialogs";
 
@@ -60,7 +59,9 @@ function ProtocolPage() {
           <Chip className={STATUS_CHIP[usage.status]}>{usage.status}</Chip>
         </div>
         <div className="mt-2.5 flex items-center gap-[18px]">
-          <GlyphTile glyph={glyphOf(protocol.title)} tone={lit ?? "stone"} filled={usage.status === "active"} dim={usage.status === "past"} />
+          <span className="self-start pt-[13px]">
+            <ToneMark tone={lit ?? "stone"} filled={usage.status === "active"} dim={usage.status === "past"} size={16} />
+          </span>
           <div className="flex min-w-0 flex-1 flex-col gap-2">
             <TitleInput key={protocol.title} title={protocol.title} onSave={(t) => void act(repos.protocols.rename(protocol.id, t))} />
             {usage.active.length > 0 && <Uses label="Used by" uses={usage.active} routines={routineById} />}
